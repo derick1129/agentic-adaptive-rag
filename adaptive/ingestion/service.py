@@ -11,7 +11,7 @@ import tempfile
 import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -141,9 +141,9 @@ class IngestionService:
             job = advance(job)
             document, chunks = await self._chunk(job)
             job = advance(job)
-            await self._embed(chunks)
+            embeddings = await self._embed(chunks)
             job = advance(job)
-            document = await self._persist(job, document, chunks)
+            document = await self._persist(job, document, chunks, embeddings)
             job = advance(job)
             job = job.model_copy(update={"document_id": document.metadata.get("document_id")})
         except Exception as exc:  # noqa: BLE001
@@ -214,14 +214,27 @@ class IngestionService:
             )
         return document, chunk_document(document, self.chunk_policy)
 
-    async def _embed(self, chunks: list[ChunkDraft]) -> None:
+    async def _embed(self, chunks: list[ChunkDraft]) -> list[list[float]]:
         if self.embedding_provider is not None and chunks:
-            await _maybe_await(self.embedding_provider.embed([chunk.text for chunk in chunks]))
+            return cast(
+                "list[list[float]]",
+                await _maybe_await(self.embedding_provider.embed([chunk.text for chunk in chunks])),
+            )
+        return []
 
     async def _persist(
-        self, job: IngestionJob, document: CanonicalDocument, chunks: list[ChunkDraft]
+        self,
+        job: IngestionJob,
+        document: CanonicalDocument,
+        chunks: list[ChunkDraft],
+        embeddings: list[list[float]],
     ) -> CanonicalDocument:
         existing = self._find_active(job.tenant_id)
+        replaced_version = (
+            existing.version
+            if existing is not None and existing.content_hash != document.content_hash
+            else None
+        )
         if existing is None:
             record = _MemoryDocument(
                 document.metadata["document_id"],
@@ -301,7 +314,18 @@ class IngestionService:
         if self.chunks is not None:
             await _maybe_await(self.chunks.bulk_create(chunks))
         if self.indexer is not None:
-            await _maybe_await(self.indexer.index_chunks(chunks))
+            if hasattr(self.indexer, "upsert_chunks"):
+                await _maybe_await(
+                    self.indexer.upsert_chunks(chunks, embeddings=embeddings or None)
+                )
+            else:
+                await _maybe_await(self.indexer.index_chunks(chunks))
+            if replaced_version is not None and hasattr(self.indexer, "delete_document_version"):
+                await _maybe_await(
+                    self.indexer.delete_document_version(
+                        document.metadata["document_id"], replaced_version
+                    )
+                )
         if record.id != document.metadata["document_id"]:
             self._memory_documents.pop(record.id, None)
             record.id = document.metadata["document_id"]
