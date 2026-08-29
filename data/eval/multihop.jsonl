@@ -1,0 +1,1 @@
+{"id":"003-multihop","question":"Which plan includes the support benefit described in the policy?","gold_answer":"The Pro plan includes priority support.","gold_depth":"multi_hop","gold_tool":"vector","tenant":"acme","relevant_chunk_ids":["plan-1","support-1"],"expected_citations":["plan-1","support-1"],"context":["The Pro plan includes priority support."]}

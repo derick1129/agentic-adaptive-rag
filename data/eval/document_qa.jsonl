@@ -1,0 +1,1 @@
+{"id":"002-document","question":"What is the refund window?","gold_answer":"Refunds are available within 30 days.","gold_depth":"single_hop","gold_tool":"vector","tenant":"acme","relevant_chunk_ids":["refund-1"],"expected_citations":["refund-1"],"context":["Refunds are available within 30 days." ]}

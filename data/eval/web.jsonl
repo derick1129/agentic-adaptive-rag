@@ -1,0 +1,1 @@
+{"id":"005-web","question":"What is the current status from the approved status page?","gold_answer":"The service is operational.","gold_depth":"single_hop","gold_tool":"web","tenant":"acme","expected_citations":["status-1"],"context":["The service is operational."]}

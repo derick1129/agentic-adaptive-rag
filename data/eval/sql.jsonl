@@ -1,0 +1,1 @@
+{"id":"004-sql","question":"Which invoices belong to tenant acme?","gold_answer":"Invoices 1 and 2 belong to acme.","gold_depth":"single_hop","gold_tool":"sql","tenant":"acme","expected_rows":[{"id":1},{"id":2}],"context":[]}
