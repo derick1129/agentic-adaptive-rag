@@ -26,6 +26,7 @@ class AgentDeps:
     policy: AgentPolicy = field(default_factory=AgentPolicy)
     evidence_checker: Any | None = None
     synthesizer: Any | None = None
+    guardrail_runner: Any | None = None
 
 
 async def _structured(
@@ -183,17 +184,19 @@ async def run_agent(state: AgentState, deps: AgentDeps) -> AgentState:
                 if current.evidence_sufficient
                 else "I don't have enough evidence to answer reliably."
             )
+            final_answer = _answer(
+                current,
+                text,
+                reason,
+                "grounded" if current.evidence_sufficient else "refused",
+                _citations(current) if current.evidence_sufficient else [],
+                None if current.evidence_sufficient else "insufficient_evidence",
+            )
+            final_answer = await _guard_output(current, final_answer, deps)
             return current.model_copy(
                 update={
                     "termination_reason": reason,
-                    "answer": _answer(
-                        current,
-                        text,
-                        reason,
-                        "grounded" if current.evidence_sufficient else "refused",
-                        _citations(current) if current.evidence_sufficient else [],
-                        None if current.evidence_sufficient else "insufficient_evidence",
-                    ),
+                    "answer": final_answer,
                 }
             )
         if action.tool not in policy.allowed_tools or action.tool not in deps.tools:
@@ -252,6 +255,24 @@ async def run_agent(state: AgentState, deps: AgentDeps) -> AgentState:
                 }
             )
         observations = [*current.observations, observation]
+        if deps.guardrail_runner is not None:
+            guardrail = await deps.guardrail_runner.check_tool_result(
+                observation, current.context.request_context
+            )
+            if guardrail.action.value in {"deny", "refuse"}:
+                reason = TerminationReason.TOOL_FAILURE
+                return current.model_copy(
+                    update={
+                        "termination_reason": reason,
+                        "answer": _answer(
+                            current,
+                            "I couldn't use that evidence safely.",
+                            reason,
+                            "refused",
+                            refusal=guardrail.details.get("code", "guardrail_denied"),
+                        ),
+                    }
+                )
         next_state = current.model_copy(
             update={"observations": observations, "current_step": current.current_step + 1}
         )
@@ -307,11 +328,13 @@ async def run_agent(state: AgentState, deps: AgentDeps) -> AgentState:
         if check.sufficient:
             text = await _synthesize(next_state, deps)
             reason = TerminationReason.ANSWER_COMPLETE
+            final_answer = _answer(next_state, text, reason, "grounded", _citations(next_state))
+            final_answer = await _guard_output(next_state, final_answer, deps)
             return next_state.model_copy(
                 update={
                     "evidence_sufficient": True,
                     "termination_reason": reason,
-                    "answer": _answer(next_state, text, reason, "grounded", _citations(next_state)),
+                    "answer": final_answer,
                 }
             )
         current = next_state
@@ -353,3 +376,30 @@ async def _synthesize(state: AgentState, deps: AgentDeps) -> str:
 
 def _citations(state: AgentState) -> list[dict[str, Any]]:
     return [citation for observation in state.observations for citation in observation.citations]
+
+
+async def _guard_output(state: AgentState, answer: Answer, deps: AgentDeps) -> Answer:
+    if deps.guardrail_runner is None:
+        return answer
+    checked = await deps.guardrail_runner.check_output(
+        answer, state.observations, state.context.request_context
+    )
+    code = checked.details.get("code", "guardrail_denied")
+    if checked.action.value in {"deny", "refuse"}:
+        return answer.model_copy(
+            update={
+                "text": "I don't have enough evidence to answer reliably.",
+                "citations": [],
+                "groundedness_status": "refused",
+                "refusal_reason": code,
+            }
+        )
+    if checked.action.value == "qualify":
+        return answer.model_copy(
+            update={
+                "groundedness_status": "partial",
+                "unsupported_claims": checked.details.get("unsupported_claims", []),
+                "refusal_reason": code,
+            }
+        )
+    return answer
