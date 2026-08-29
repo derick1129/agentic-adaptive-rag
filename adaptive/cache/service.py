@@ -1,0 +1,80 @@
+"""Cache orchestration and safe observability hooks."""
+
+from __future__ import annotations
+
+from collections import Counter
+from typing import TYPE_CHECKING, Any
+
+from adaptive.observability.attributes import query_hash, scope_id
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from adaptive.cache.contracts import CacheEntry, CacheHit, CacheLookup, CacheStore
+
+
+class CacheMetrics:
+    """Deterministic counters suitable for tests or an application metrics adapter."""
+
+    def __init__(self) -> None:
+        self._counts: Counter[str] = Counter()
+
+    @property
+    def counts(self) -> dict[str, int]:
+        return dict(self._counts)
+
+    def record(self, status: str) -> None:
+        self._counts[status] += 1
+
+
+class SemanticCacheService:
+    """Apply the cache feature flag and emit redacted cache lifecycle events."""
+
+    def __init__(
+        self,
+        store: CacheStore,
+        *,
+        enabled: bool = True,
+        metrics: CacheMetrics | None = None,
+        event_sink: Callable[[dict[str, Any]], None] | None = None,
+    ) -> None:
+        self.store = store
+        self.enabled = enabled
+        self.metrics = metrics or CacheMetrics()
+        self.event_sink = event_sink
+
+    def _record(self, status: str, request: CacheLookup | None = None, **extra: object) -> None:
+        self.metrics.record(status)
+        event: dict[str, Any] = {"status": status, "cache.status": status, **extra}
+        if request is not None:
+            event.update(
+                {
+                    "query_hash": query_hash(request.query_text),
+                    "query.hash": query_hash(request.query_text),
+                    "scope_id": scope_id(request.context.tenant_id, request.context.acl),
+                    "tenant.scope_id": scope_id(request.context.tenant_id, request.context.acl),
+                }
+            )
+        if self.event_sink:
+            self.event_sink(event)
+
+    async def lookup(self, request: CacheLookup) -> CacheHit | None:
+        if not self.enabled:
+            self._record("bypass", request)
+            return None
+        hit = await self.store.lookup(request)
+        if hit is None:
+            status = "stale" if getattr(self.store, "last_status", "miss") == "stale" else "miss"
+            self._record(status, request)
+            return None
+        self._record("hit", request, similarity=hit.similarity)
+        return hit
+
+    async def put(self, entry: CacheEntry) -> None:
+        if self.enabled:
+            await self.store.put(entry)
+
+    async def invalidate_document(self, document_id: str, version: int) -> int:
+        count = await self.store.invalidate_document(document_id, version)
+        self._record("invalidated", document_id_hash=query_hash(document_id), count=count)
+        return count

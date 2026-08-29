@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
     JSON,
     DateTime,
@@ -19,9 +21,14 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    TypeDecorator,
     UniqueConstraint,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Dialect
+    from sqlalchemy.types import TypeEngine
 
 
 def new_id() -> str:
@@ -41,6 +48,18 @@ class TimestampMixin:
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utcnow, onupdate=utcnow, nullable=False
     )
+
+
+class EmbeddingVector(TypeDecorator[list[float]]):
+    """Use pgvector in PostgreSQL while keeping SQLite tests portable."""
+
+    impl = JSON
+    cache_ok = True
+
+    def load_dialect_impl(self, dialect: Dialect) -> TypeEngine[list[float]]:
+        if dialect.name == "postgresql":
+            return dialect.type_descriptor(Vector(1536))
+        return dialect.type_descriptor(JSON())
 
 
 class Tenant(TimestampMixin, Base):
@@ -156,7 +175,7 @@ class SemanticCacheEntry(TimestampMixin, Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
     tenant_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
     acl: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
-    query_embedding: Mapped[list[float]] = mapped_column(JSON, nullable=False)
+    query_embedding: Mapped[list[float]] = mapped_column(EmbeddingVector(), nullable=False)
     answer_text: Mapped[str] = mapped_column(Text, nullable=False)
     citations: Mapped[list[dict]] = mapped_column(JSON, default=list, nullable=False)
     model_profile: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -166,6 +185,14 @@ class SemanticCacheEntry(TimestampMixin, Base):
     hit_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     cost_usd: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     latency_ms: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    __table_args__ = (
+        Index("ix_cache_tenant_expiry", "tenant_id", "expires_at"),
+        Index(
+            "ix_cache_referenced_document_versions",
+            "referenced_document_versions",
+            postgresql_using="gin",
+        ),
+    )
 
 
 class EvaluationAnnotation(TimestampMixin, Base):
