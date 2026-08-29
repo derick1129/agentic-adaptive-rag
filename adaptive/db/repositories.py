@@ -108,6 +108,25 @@ class DocumentRepository:
             self._to_contract(model) if model and context.can_access(frozenset(model.acl)) else None
         )
 
+    def find_active(self, tenant_id: str, filename: str | None = None) -> Document | None:
+        query = select(DocumentModel).where(
+            DocumentModel.tenant_id == tenant_id, DocumentModel.status == "active"
+        )
+        if filename:
+            query = query.where(DocumentModel.filename == filename)
+        model = self.session.scalar(query.order_by(DocumentModel.created_at))
+        return self._to_contract(model) if model else None
+
+    def find_active_by_hash(self, tenant_id: str, content_hash: str) -> Document | None:
+        model = self.session.scalar(
+            select(DocumentModel).where(
+                DocumentModel.tenant_id == tenant_id,
+                DocumentModel.content_hash == content_hash,
+                DocumentModel.status == "active",
+            )
+        )
+        return self._to_contract(model) if model else None
+
     def list_active(self, context: RequestContext, limit: int = 100) -> list[Document]:
         models = self.session.scalars(
             select(DocumentModel)
@@ -139,6 +158,9 @@ class DocumentRepository:
         )
         if active:
             active.status = "replaced"
+            # Flush the deactivation first so engines with immediate unique
+            # constraints cannot observe two active versions in one flush.
+            self.session.flush()
         record.status = "active"
         model.version = version
         model.content_hash = record.content_hash
