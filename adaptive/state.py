@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
@@ -47,9 +48,6 @@ class AppState:
 
 # Global app state instance
 app_state = AppState()
-
-
-import time
 
 
 def get_request_context() -> RequestContext | None:

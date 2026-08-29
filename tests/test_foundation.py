@@ -4,7 +4,12 @@ These tests define the expected behavior of core interfaces and data models.
 They MUST fail initially because implementations don't exist yet.
 """
 
+import importlib
+
 import pytest
+from pydantic import ValidationError
+
+from adaptive.config import Settings
 from adaptive.interfaces import (
     AgentState,
     Answer,
@@ -18,15 +23,12 @@ from adaptive.interfaces import (
     ChunkPolicy,
     ChunkRecord,
     Document,
-    DocumentCreateParams,
     DocumentStatus,
-    DocumentSource,
     GuardrailAction,
     GuardrailResult,
     IngestionJob,
     IngestionStatus,
     ParsedDocument,
-    Parser,
     RequestContext,
     RetrievalDiagnostics,
     RetrievalQuery,
@@ -35,22 +37,25 @@ from adaptive.interfaces import (
     RouteDepth,
     RouteSource,
     RouteTool,
-    TerminationReason,
     ToolContext,
     ToolResult,
     ToolStatus,
 )
+
+EXPECTED_ROUTE_CONFIDENCE = 0.85
+EXPECTED_BUDGET_TOKENS = 1000
+EXPECTED_RETRIEVAL_LIMIT = 10
+EXPECTED_RETRIEVAL_COUNT = 5
+EXPECTED_DOCUMENT_VERSION = 2
+EXPECTED_CHUNK_MAX_TOKENS = 512
+EXPECTED_CHUNK_OVERLAP_TOKENS = 50
 
 
 class TestRequestContext:
     """Tests for RequestContext - server-derived tenant scope."""
 
     def test_request_context_carries_server_scope(self):
-        context = RequestContext(
-            tenant_id="acme",
-            subject_id="user-1",
-            acl=frozenset({"support"})
-        )
+        context = RequestContext(tenant_id="acme", subject_id="user-1", acl=frozenset({"support"}))
         assert context.tenant_id == "acme"
         assert "support" in context.acl
 
@@ -61,18 +66,12 @@ class TestRequestContext:
 
     def test_can_access_with_matching_acl(self):
         context = RequestContext(
-            tenant_id="acme",
-            subject_id="user-1",
-            acl=frozenset({"support", "admin"})
+            tenant_id="acme", subject_id="user-1", acl=frozenset({"support", "admin"})
         )
         assert context.can_access(frozenset({"support"})) is True
 
     def test_can_access_with_missing_acl(self):
-        context = RequestContext(
-            tenant_id="acme",
-            subject_id="user-1",
-            acl=frozenset({"support"})
-        )
+        context = RequestContext(tenant_id="acme", subject_id="user-1", acl=frozenset({"support"}))
         assert context.can_access(frozenset({"finance"})) is False
 
     def test_request_context_has_unique_ids(self):
@@ -80,6 +79,40 @@ class TestRequestContext:
         ctx2 = RequestContext(tenant_id="acme", subject_id="user-1")
         assert ctx1.request_id != ctx2.request_id
         assert ctx1.trace_id != ctx2.trace_id
+
+
+class TestFoundationRuntime:
+    """Tests for runtime importability and environment validation."""
+
+    def test_state_module_imports_successfully(self):
+        state = importlib.import_module("adaptive.state")
+
+        assert state.app_state.is_ready is False
+        assert state.app_state.startup_time > 0
+
+    def test_settings_validate_cross_field_limits(self):
+        settings = Settings(DATABASE_URL="postgresql://db", OPENSEARCH_URL="http://search")
+        assert settings.ingestion_chunk_overlap_tokens < settings.ingestion_chunk_max_tokens
+        assert settings.retrieval_fusion_k <= max(
+            settings.retrieval_bm25_k, settings.retrieval_dense_k
+        )
+
+        with pytest.raises(ValidationError, match="overlap_tokens must be less than max_tokens"):
+            Settings(
+                DATABASE_URL="postgresql://db",
+                OPENSEARCH_URL="http://search",
+                INGESTION_CHUNK_MAX_TOKENS=100,
+                INGESTION_CHUNK_OVERLAP_TOKENS=100,
+            )
+
+        with pytest.raises(ValidationError, match="fusion_k must not exceed"):
+            Settings(
+                DATABASE_URL="postgresql://db",
+                OPENSEARCH_URL="http://search",
+                RETRIEVAL_BM25_K=10,
+                RETRIEVAL_DENSE_K=10,
+                RETRIEVAL_FUSION_K=11,
+            )
 
 
 class TestBudget:
@@ -125,31 +158,31 @@ class TestRouteDecision:
         decision = RouteDecision(
             depth=RouteDepth.SINGLE_HOP,
             tool=RouteTool.VECTOR,
-            confidence=0.85,
+            confidence=EXPECTED_ROUTE_CONFIDENCE,
             source=RouteSource.LLM,
-            rationale="Document lookup required"
+            rationale="Document lookup required",
         )
         assert decision.depth == RouteDepth.SINGLE_HOP
         assert decision.tool == RouteTool.VECTOR
-        assert decision.confidence == 0.85
+        assert decision.confidence == EXPECTED_ROUTE_CONFIDENCE
 
     def test_parametric_route_no_tool(self):
         decision = RouteDecision(
             depth=RouteDepth.PARAMETRIC,
             tool=RouteTool.PARAMETRIC,
             confidence=0.95,
-            source=RouteSource.LLM
+            source=RouteSource.LLM,
         )
         assert decision.depth == RouteDepth.PARAMETRIC
         assert decision.tool == RouteTool.PARAMETRIC
 
     def test_confidence_bounds(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             RouteDecision(
                 depth=RouteDepth.SINGLE_HOP,
                 tool=RouteTool.VECTOR,
                 confidence=1.5,  # Invalid - > 1.0
-                source=RouteSource.LLM
+                source=RouteSource.LLM,
             )
 
     def test_route_decision_frozen(self):
@@ -157,7 +190,7 @@ class TestRouteDecision:
             depth=RouteDepth.SINGLE_HOP,
             tool=RouteTool.VECTOR,
             confidence=0.8,
-            source=RouteSource.LLM
+            source=RouteSource.LLM,
         )
         with pytest.raises(Exception, match="frozen"):
             decision.confidence = 0.9
@@ -168,21 +201,21 @@ class TestToolContextAndResult:
 
     def test_tool_context_carries_budget_and_route(self):
         context = RequestContext(tenant_id="acme", subject_id="user-1")
-        budget = Budget(max_tokens=1000, max_cost_usd=0.10, max_steps=5)
+        budget = Budget(max_tokens=EXPECTED_BUDGET_TOKENS, max_cost_usd=0.10, max_steps=5)
         route = RouteDecision(
             depth=RouteDepth.SINGLE_HOP,
             tool=RouteTool.VECTOR,
             confidence=0.8,
-            source=RouteSource.LLM
+            source=RouteSource.LLM,
         )
         tool_ctx = ToolContext(
             request_context=context,
             budget=budget,
             query="test query",
             route_decision=route,
-            trace_id="trace-123"
+            trace_id="trace-123",
         )
-        assert tool_ctx.budget.max_tokens == 1000
+        assert tool_ctx.budget.max_tokens == EXPECTED_BUDGET_TOKENS
         assert tool_ctx.route_decision.tool == RouteTool.VECTOR
 
     def test_tool_result_success(self):
@@ -191,7 +224,7 @@ class TestToolContextAndResult:
             status=ToolStatus.SUCCESS,
             text="Found relevant document",
             citations=[{"doc_id": "doc-1", "chunk_id": "chunk-1"}],
-            latency_ms=150
+            latency_ms=150,
         )
         assert result.status == ToolStatus.SUCCESS
         assert len(result.citations) == 1
@@ -202,7 +235,7 @@ class TestToolContextAndResult:
             status=ToolStatus.ERROR,
             error_code="SQL_VALIDATION_FAILED",
             error_message="DML not allowed",
-            latency_ms=50
+            latency_ms=50,
         )
         assert result.status == ToolStatus.ERROR
         assert result.error_code == "SQL_VALIDATION_FAILED"
@@ -213,20 +246,36 @@ class TestRetrievalContracts:
 
     def test_retrieval_query_carries_context(self):
         context = RequestContext(tenant_id="acme", subject_id="user-1")
-        query = RetrievalQuery(text="refund policy", context=context, limit=10)
+        query = RetrievalQuery(
+            text="refund policy", context=context, limit=EXPECTED_RETRIEVAL_LIMIT
+        )
         assert query.text == "refund policy"
         assert query.context.tenant_id == "acme"
-        assert query.limit == 10
+        assert query.limit == EXPECTED_RETRIEVAL_LIMIT
 
     def test_retrieval_result_includes_diagnostics(self):
         context = RequestContext(tenant_id="acme", subject_id="user-1")
         query = RetrievalQuery(text="test", context=context)
         chunks = [
-            Chunk(id="c1", document_id="d1", tenant_id="acme", version=1, ordinal=0, text="text1", token_count=10)
+            Chunk(
+                id="c1",
+                document_id="d1",
+                tenant_id="acme",
+                version=1,
+                ordinal=0,
+                text="text1",
+                token_count=10,
+            )
         ]
-        diag = RetrievalDiagnostics(bm25_count=5, dense_count=5, fusion="rrf", final_count=1, latency_ms=100)
+        diag = RetrievalDiagnostics(
+            bm25_count=EXPECTED_RETRIEVAL_COUNT,
+            dense_count=EXPECTED_RETRIEVAL_COUNT,
+            fusion="rrf",
+            final_count=1,
+            latency_ms=100,
+        )
         result = RetrievalResult(chunks=chunks, diagnostics=diag, query=query)
-        assert result.diagnostics.bm25_count == 5
+        assert result.diagnostics.bm25_count == EXPECTED_RETRIEVAL_COUNT
         assert result.diagnostics.fusion == "rrf"
         assert len(result.chunks) == 1
 
@@ -243,7 +292,7 @@ class TestCacheContracts:
             route_depth=RouteDepth.SINGLE_HOP,
             route_tool=RouteTool.VECTOR,
             model_profile="gpt-4o-mini",
-            response_mode="default"
+            response_mode="default",
         )
         assert lookup.context.tenant_id == "acme"
         assert "support" in lookup.context.acl
@@ -257,12 +306,12 @@ class TestCacheContracts:
             citations=[],
             model_profile="gpt-4o-mini",
             response_mode="default",
-            referenced_document_versions={"doc-1": 2, "doc-2": 1},
+            referenced_document_versions={"doc-1": EXPECTED_DOCUMENT_VERSION, "doc-2": 1},
             cost_usd=0.01,
             latency_ms=500,
-            expires_at=__import__("datetime").datetime.utcnow()
+            expires_at=__import__("datetime").datetime.utcnow(),
         )
-        assert entry.referenced_document_versions["doc-1"] == 2
+        assert entry.referenced_document_versions["doc-1"] == EXPECTED_DOCUMENT_VERSION
 
 
 class TestAnswer:
@@ -273,7 +322,7 @@ class TestAnswer:
             depth=RouteDepth.SINGLE_HOP,
             tool=RouteTool.VECTOR,
             confidence=0.8,
-            source=RouteSource.LLM
+            source=RouteSource.LLM,
         )
         answer = Answer(
             text="The refund window is 30 days.",
@@ -282,7 +331,7 @@ class TestAnswer:
             route_decision=route,
             actual_tools_used=[RouteTool.VECTOR],
             cache_status=CacheStatus.MISS,
-            trace_id="trace-123"
+            trace_id="trace-123",
         )
         assert answer.groundedness_status == "grounded"
         assert len(answer.citations) == 1
@@ -293,7 +342,7 @@ class TestAnswer:
             depth=RouteDepth.SINGLE_HOP,
             tool=RouteTool.VECTOR,
             confidence=0.3,
-            source=RouteSource.LLM
+            source=RouteSource.LLM,
         )
         answer = Answer(
             text="",
@@ -303,7 +352,7 @@ class TestAnswer:
             route_decision=route,
             actual_tools_used=[RouteTool.VECTOR],
             cache_status=CacheStatus.MISS,
-            trace_id="trace-123"
+            trace_id="trace-123",
         )
         assert answer.groundedness_status == "refused"
         assert answer.refusal_reason == "Insufficient evidence"
@@ -320,7 +369,7 @@ class TestGuardrailResult:
         result = GuardrailResult(
             action=GuardrailAction.DENY,
             reason="Prompt injection detected",
-            details={"pattern": "ignore previous instructions"}
+            details={"pattern": "ignore previous instructions"},
         )
         assert result.action == GuardrailAction.DENY
         assert result.reason == "Prompt injection detected"
@@ -329,7 +378,7 @@ class TestGuardrailResult:
         result = GuardrailResult(
             action=GuardrailAction.QUALIFY,
             reason="Partial grounding",
-            details={"groundedness_score": 0.6}
+            details={"groundedness_score": 0.6},
         )
         assert result.action == GuardrailAction.QUALIFY
 
@@ -344,21 +393,21 @@ class TestAgentState:
             depth=RouteDepth.MULTI_HOP,
             tool=RouteTool.VECTOR,
             confidence=0.7,
-            source=RouteSource.LLM
+            source=RouteSource.LLM,
         )
         tool_ctx = ToolContext(
             request_context=context,
             budget=budget,
             query="multi-hop query",
             route_decision=route,
-            trace_id="trace-123"
+            trace_id="trace-123",
         )
         state = AgentState(
             query="multi-hop query",
             context=tool_ctx,
             route_decision=route,
             observations=[],
-            current_step=0
+            current_step=0,
         )
         assert state.current_step == 0
         assert state.termination_reason is None
@@ -374,7 +423,7 @@ class TestIngestionContracts:
             tenant_id="acme",
             document_id=None,
             status=IngestionStatus.RECEIVED,
-            current_stage="received"
+            current_stage="received",
         )
         assert job.status == IngestionStatus.RECEIVED
 
@@ -383,12 +432,15 @@ class TestIngestionContracts:
         assert job.status == IngestionStatus.PARSING
 
     def test_chunk_policy_validation(self):
-        policy = ChunkPolicy(max_tokens=512, overlap_tokens=50)
-        assert policy.max_tokens == 512
-        assert policy.overlap_tokens == 50
+        policy = ChunkPolicy(
+            max_tokens=EXPECTED_CHUNK_MAX_TOKENS,
+            overlap_tokens=EXPECTED_CHUNK_OVERLAP_TOKENS,
+        )
+        assert policy.max_tokens == EXPECTED_CHUNK_MAX_TOKENS
+        assert policy.overlap_tokens == EXPECTED_CHUNK_OVERLAP_TOKENS
 
     def test_chunk_policy_overlap_validation(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ChunkPolicy(max_tokens=100, overlap_tokens=100)  # overlap >= max
 
 
@@ -402,7 +454,7 @@ class TestParsedDocument:
             pages=[{"page": 1, "text": "Content here"}],
             headings=[{"level": 1, "text": "Test Doc"}],
             tables=[],
-            metadata={"author": "test"}
+            metadata={"author": "test"},
         )
         assert doc.title == "Test Doc"
         assert len(doc.pages) == 1
@@ -421,7 +473,7 @@ class TestCanonicalDocument:
             acl=frozenset({"public"}),
             pages=[],
             headings=[],
-            tables=[]
+            tables=[],
         )
         assert doc.content_hash == "abc123"
         assert "public" in doc.acl
@@ -442,7 +494,7 @@ class TestChunkDraft:
             page_number=1,
             token_count=50,
             metadata={},
-            acl=frozenset({"public"})
+            acl=frozenset({"public"}),
         )
         draft2 = ChunkDraft(
             id="chunk-1",
@@ -455,7 +507,7 @@ class TestChunkDraft:
             page_number=1,
             token_count=50,
             metadata={},
-            acl=frozenset({"public"})
+            acl=frozenset({"public"}),
         )
         assert draft1.id == draft2.id
 
@@ -478,7 +530,7 @@ class TestDocumentAndChunkRecords:
             acl=frozenset({"public"}),
             status=DocumentStatus.ACTIVE,
             created_at=__import__("datetime").datetime.utcnow(),
-            updated_at=__import__("datetime").datetime.utcnow()
+            updated_at=__import__("datetime").datetime.utcnow(),
         )
         assert doc.tenant_id == "acme"
         assert doc.status == DocumentStatus.ACTIVE
@@ -498,7 +550,7 @@ class TestDocumentAndChunkRecords:
             acl=frozenset({"public"}),
             embedding_status="pending",
             index_status="pending",
-            created_at=__import__("datetime").datetime.utcnow()
+            created_at=__import__("datetime").datetime.utcnow(),
         )
         assert chunk.document_id == "doc-1"
         assert chunk.embedding_status == "pending"

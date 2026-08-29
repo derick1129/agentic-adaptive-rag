@@ -2,9 +2,10 @@
 
 from functools import lru_cache
 from typing import Literal
-from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from pydantic import Field, ValidationInfo, field_validator
 from pydantic_core import PydanticCustomError
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -21,7 +22,7 @@ class Settings(BaseSettings):
     app_env: Literal["development", "staging", "production"] = Field(
         default="development", alias="APP_ENV"
     )
-    app_host: str = Field(default="0.0.0.0", alias="APP_HOST")
+    app_host: str = Field(default="0.0.0.0", alias="APP_HOST")  # noqa: S104
     app_port: int = Field(default=8000, alias="APP_PORT")
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(
         default="INFO", alias="LOG_LEVEL"
@@ -49,7 +50,9 @@ class Settings(BaseSettings):
     embedding_api_base: str = Field(default="https://api.openai.com/v1", alias="EMBEDDING_API_BASE")
     embedding_batch_size: int = Field(default=100, alias="EMBEDDING_BATCH_SIZE", ge=1, le=1000)
     embedding_dimensions: int = Field(default=1536, alias="EMBEDDING_DIMENSIONS", ge=1, le=8192)
-    embedding_timeout_seconds: int = Field(default=30, alias="EMBEDDING_TIMEOUT_SECONDS", ge=1, le=300)
+    embedding_timeout_seconds: int = Field(
+        default=30, alias="EMBEDDING_TIMEOUT_SECONDS", ge=1, le=300
+    )
     embedding_max_retries: int = Field(default=3, alias="EMBEDDING_MAX_RETRIES", ge=0, le=10)
 
     # Generation Provider
@@ -58,8 +61,12 @@ class Settings(BaseSettings):
     )
     generation_model: str = Field(default="gpt-4o-mini", alias="GENERATION_MODEL")
     generation_api_key: str = Field(default="", alias="GENERATION_API_KEY")
-    generation_api_base: str = Field(default="https://api.openai.com/v1", alias="GENERATION_API_BASE")
-    generation_timeout_seconds: int = Field(default=60, alias="GENERATION_TIMEOUT_SECONDS", ge=1, le=600)
+    generation_api_base: str = Field(
+        default="https://api.openai.com/v1", alias="GENERATION_API_BASE"
+    )
+    generation_timeout_seconds: int = Field(
+        default=60, alias="GENERATION_TIMEOUT_SECONDS", ge=1, le=600
+    )
     generation_max_retries: int = Field(default=3, alias="GENERATION_MAX_RETRIES", ge=0, le=10)
 
     # Router
@@ -84,12 +91,13 @@ class Settings(BaseSettings):
 
     # Web Tool
     web_allowlist: str = Field(
-        default="api.github.com,raw.githubusercontent.com,en.wikipedia.org",
-        alias="WEB_ALLOWLIST"
+        default="api.github.com,raw.githubusercontent.com,en.wikipedia.org", alias="WEB_ALLOWLIST"
     )
     web_timeout_seconds: int = Field(default=10, alias="WEB_TIMEOUT_SECONDS", ge=1, le=120)
     web_max_retries: int = Field(default=2, alias="WEB_MAX_RETRIES", ge=0, le=10)
-    web_max_content_length: int = Field(default=50000, alias="WEB_MAX_CONTENT_LENGTH", ge=1000, le=1000000)
+    web_max_content_length: int = Field(
+        default=50000, alias="WEB_MAX_CONTENT_LENGTH", ge=1000, le=1000000
+    )
 
     @property
     def web_allowlist_domains(self) -> list[str]:
@@ -97,7 +105,9 @@ class Settings(BaseSettings):
         return [d.strip() for d in self.web_allowlist.split(",") if d.strip()]
 
     # SQL Tool
-    sql_statement_timeout_ms: int = Field(default=5000, alias="SQL_STATEMENT_TIMEOUT_MS", ge=100, le=120000)
+    sql_statement_timeout_ms: int = Field(
+        default=5000, alias="SQL_STATEMENT_TIMEOUT_MS", ge=100, le=120000
+    )
     sql_max_rows: int = Field(default=1000, alias="SQL_MAX_ROWS", ge=1, le=100000)
     sql_allowed_schemas: str = Field(default="public", alias="SQL_ALLOWED_SCHEMAS")
 
@@ -120,18 +130,24 @@ class Settings(BaseSettings):
     agent_max_steps: int = Field(default=10, alias="AGENT_MAX_STEPS", ge=1, le=100)
     agent_max_tokens: int = Field(default=8000, alias="AGENT_MAX_TOKENS", ge=100, le=100000)
     agent_max_cost_usd: float = Field(default=0.50, alias="AGENT_MAX_COST_USD", ge=0.0, le=100.0)
-    agent_max_wall_time_seconds: int = Field(default=120, alias="AGENT_MAX_WALL_TIME_SECONDS", ge=10, le=3600)
+    agent_max_wall_time_seconds: int = Field(
+        default=120, alias="AGENT_MAX_WALL_TIME_SECONDS", ge=10, le=3600
+    )
 
     # Phoenix Observability
     phoenix_enabled: bool = Field(default=True, alias="PHOENIX_ENABLED")
-    phoenix_endpoint: str = Field(default="http://localhost:6006/v1/traces", alias="PHOENIX_ENDPOINT")
+    phoenix_endpoint: str = Field(
+        default="http://localhost:6006/v1/traces", alias="PHOENIX_ENDPOINT"
+    )
     phoenix_project_name: str = Field(default="adaptive-rag", alias="PHOENIX_PROJECT_NAME")
     phoenix_redact_prompts: bool = Field(default=True, alias="PHOENIX_REDACT_PROMPTS")
     phoenix_redact_documents: bool = Field(default=True, alias="PHOENIX_REDACT_DOCUMENTS")
     phoenix_redact_credentials: bool = Field(default=True, alias="PHOENIX_REDACT_CREDENTIALS")
 
     # Authentication
-    auth_mode: Literal["development", "production"] = Field(default="development", alias="AUTH_MODE")
+    auth_mode: Literal["development", "production"] = Field(
+        default="development", alias="AUTH_MODE"
+    )
     auth_dev_tenant_id: str = Field(default="acme", alias="AUTH_DEV_TENANT_ID")
     auth_dev_subject_id: str = Field(default="user-1", alias="AUTH_DEV_SUBJECT_ID")
     auth_dev_acl: str = Field(default="support,admin", alias="AUTH_DEV_ACL")
@@ -141,14 +157,23 @@ class Settings(BaseSettings):
         return frozenset(a.strip() for a in self.auth_dev_acl.split(",") if a.strip())
 
     # Ingestion
-    ingestion_max_file_size_mb: int = Field(default=50, alias="INGESTION_MAX_FILE_SIZE_MB", ge=1, le=1000)
-    ingestion_temp_dir: str = Field(default="/tmp/adaptive_rag_ingestion", alias="INGESTION_TEMP_DIR")
-    ingestion_chunk_max_tokens: int = Field(default=512, alias="INGESTION_CHUNK_MAX_TOKENS", ge=64, le=8192)
-    ingestion_chunk_overlap_tokens: int = Field(default=50, alias="INGESTION_CHUNK_OVERLAP_TOKENS", ge=0, le=1024)
+    ingestion_max_file_size_mb: int = Field(
+        default=50, alias="INGESTION_MAX_FILE_SIZE_MB", ge=1, le=1000
+    )
+    ingestion_temp_dir: str = Field(
+        default="/tmp/adaptive_rag_ingestion",  # noqa: S108
+        alias="INGESTION_TEMP_DIR",  # noqa: S108
+    )
+    ingestion_chunk_max_tokens: int = Field(
+        default=512, alias="INGESTION_CHUNK_MAX_TOKENS", ge=64, le=8192
+    )
+    ingestion_chunk_overlap_tokens: int = Field(
+        default=50, alias="INGESTION_CHUNK_OVERLAP_TOKENS", ge=0, le=1024
+    )
 
     @field_validator("ingestion_chunk_overlap_tokens")
     @classmethod
-    def overlap_less_than_max(cls, v: int, info) -> int:
+    def overlap_less_than_max(cls, v: int, info: ValidationInfo) -> int:
         max_tokens = info.data.get("ingestion_chunk_max_tokens", 512)
         if v >= max_tokens:
             raise PydanticCustomError("value_error", "overlap_tokens must be less than max_tokens")
@@ -168,16 +193,18 @@ class Settings(BaseSettings):
 
     @field_validator("retrieval_fusion_k")
     @classmethod
-    def fusion_k_not_exceed_sources(cls, v: int, info) -> int:
+    def fusion_k_not_exceed_sources(cls, v: int, info: ValidationInfo) -> int:
         bm25_k = info.data.get("retrieval_bm25_k", 50)
         dense_k = info.data.get("retrieval_dense_k", 50)
         max_k = max(bm25_k, dense_k)
         if v > max_k:
-            raise PydanticCustomError("value_error", "fusion_k must not exceed max(bm25_k, dense_k)")
+            raise PydanticCustomError(
+                "value_error", "fusion_k must not exceed max(bm25_k, dense_k)"
+            )
         return v
 
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     """Get cached settings instance."""
-    return Settings()
+    return Settings()  # type: ignore[call-arg]

@@ -12,9 +12,8 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any, Literal, Protocol, TypeVar, runtime_checkable
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 from pydantic_core import PydanticCustomError
-
 
 # =============================================================================
 # Enums and Literals
@@ -325,7 +324,7 @@ class AgentState(BaseModel):
 
 
 # =============================================================================
-# Protocols (Interfaces)
+# Protocol definitions
 # =============================================================================
 
 T = TypeVar("T")
@@ -335,8 +334,7 @@ T = TypeVar("T")
 class Router(Protocol):
     """Router protocol - produces RouteDecision from query context."""
 
-    async def route(self, query: str, context: RequestContext, budget: Budget) -> RouteDecision:
-        ...
+    async def route(self, query: str, context: RequestContext, budget: Budget) -> RouteDecision: ...
 
 
 @runtime_checkable
@@ -344,103 +342,84 @@ class Tool(Protocol):
     """Tool protocol - executes a single tool call."""
 
     @property
-    def tool_type(self) -> RouteTool:
-        ...
+    def tool_type(self) -> RouteTool: ...
 
-    async def run(self, context: ToolContext) -> ToolResult:
-        ...
+    async def run(self, context: ToolContext) -> ToolResult: ...
 
 
 @runtime_checkable
 class HybridRetriever(Protocol):
     """Hybrid retrieval protocol - BM25 + dense with fusion."""
 
-    async def retrieve(self, query: RetrievalQuery) -> RetrievalResult:
-        ...
+    async def retrieve(self, query: RetrievalQuery) -> RetrievalResult: ...
 
-    async def index_chunks(self, chunks: list[Chunk]) -> dict[str, Any]:
-        ...
+    async def index_chunks(self, chunks: list[Chunk]) -> dict[str, Any]: ...
 
-    async def delete_document_version(self, document_id: str, version: int) -> None:
-        ...
+    async def delete_document_version(self, document_id: str, version: int) -> None: ...
 
 
 @runtime_checkable
 class CacheStore(Protocol):
     """Semantic cache protocol."""
 
-    async def lookup(self, request: CacheLookup) -> CacheHit | None:
-        ...
+    async def lookup(self, request: CacheLookup) -> CacheHit | None: ...
 
-    async def put(self, entry: CacheEntry) -> None:
-        ...
+    async def put(self, entry: CacheEntry) -> None: ...
 
-    async def invalidate_document(self, document_id: str, version: int) -> int:
-        ...
+    async def invalidate_document(self, document_id: str, version: int) -> int: ...
 
 
 @runtime_checkable
 class Generator(Protocol):
     """Generation protocol - LLM text generation."""
 
-    async def generate(self, prompt: str, max_tokens: int, temperature: float = 0.0) -> str:
-        ...
+    async def generate(self, prompt: str, max_tokens: int, temperature: float = 0.0) -> str: ...
 
     async def generate_structured(
         self, prompt: str, schema: type[BaseModel], max_tokens: int
-    ) -> BaseModel:
-        ...
+    ) -> BaseModel: ...
 
 
 @runtime_checkable
 class EmbeddingProvider(Protocol):
     """Embedding provider protocol."""
 
-    async def embed(self, texts: list[str]) -> list[list[float]]:
-        ...
+    async def embed(self, texts: list[str]) -> list[list[float]]: ...
 
     @property
-    def dimensions(self) -> int:
-        ...
+    def dimensions(self) -> int: ...
 
 
 @runtime_checkable
 class Guardrail(Protocol):
     """Guardrail protocol - checks at trust boundaries."""
 
-    async def check(self, context: RequestContext, data: Any) -> GuardrailResult:
-        ...
+    async def check(self, context: RequestContext, data: object) -> GuardrailResult: ...
 
 
 @runtime_checkable
 class DocumentSource(Protocol):
     """Document source protocol - for ingestion."""
 
-    async def read(self) -> bytes:
-        ...
+    async def read(self) -> bytes: ...
 
     @property
-    def mime_type(self) -> str:
-        ...
+    def mime_type(self) -> str: ...
 
     @property
-    def filename(self) -> str:
-        ...
+    def filename(self) -> str: ...
 
     @property
-    def size(self) -> int:
-        ...
+    def size(self) -> int: ...
 
 
 @runtime_checkable
 class Parser(Protocol):
     """Parser protocol - converts raw bytes to parsed document."""
 
-    def supports(self, mime_type: str) -> bool:
-        ...
+    def supports(self, mime_type: str) -> bool: ...
 
-    def parse(self, payload: bytes, mime_type: str) -> ParsedDocument:
-        ...
+    def parse(self, payload: bytes, mime_type: str) -> ParsedDocument: ...
 
 
 class ParsedDocument(BaseModel):
@@ -493,7 +472,7 @@ class ChunkPolicy(BaseModel):
 
     @field_validator("overlap_tokens")
     @classmethod
-    def overlap_less_than_max(cls, v: int, info: Any) -> int:
+    def overlap_less_than_max(cls, v: int, info: ValidationInfo) -> int:
         max_tokens = info.data.get("max_tokens", 512)
         if v >= max_tokens:
             raise PydanticCustomError("value_error", "overlap_tokens must be less than max_tokens")
@@ -534,44 +513,33 @@ class DocumentCreateParams(BaseModel):
 
 @runtime_checkable
 class DocumentRepository(Protocol):
-    async def create(self, params: DocumentCreateParams) -> Document:
-        ...
+    async def create(self, params: DocumentCreateParams) -> Document: ...
 
-    async def get(self, document_id: str, context: RequestContext) -> Document | None:
-        ...
+    async def get(self, document_id: str, context: RequestContext) -> Document | None: ...
 
-    async def list_active(self, context: RequestContext, limit: int = 100) -> list[Document]:
-        ...
+    async def list_active(self, context: RequestContext, limit: int = 100) -> list[Document]: ...
 
-    async def activate_version(self, document_id: str, version: int) -> Document:
-        ...
+    async def activate_version(self, document_id: str, version: int) -> Document: ...
 
-    async def deactivate(self, document_id: str) -> None:
-        ...
+    async def deactivate(self, document_id: str) -> None: ...
 
 
 @runtime_checkable
 class ChunkRepository(Protocol):
-    async def bulk_create(self, chunks: list[ChunkDraft]) -> list[ChunkRecord]:
-        ...
+    async def bulk_create(self, chunks: list[ChunkDraft]) -> list[ChunkRecord]: ...
 
-    async def get_by_document(self, document_id: str, version: int) -> list[ChunkRecord]:
-        ...
+    async def get_by_document(self, document_id: str, version: int) -> list[ChunkRecord]: ...
 
-    async def delete_by_document_version(self, document_id: str, version: int) -> int:
-        ...
+    async def delete_by_document_version(self, document_id: str, version: int) -> int: ...
 
 
 @runtime_checkable
 class IngestionJobRepository(Protocol):
-    async def create(self, job: IngestionJob) -> IngestionJob:
-        ...
+    async def create(self, job: IngestionJob) -> IngestionJob: ...
 
-    async def get(self, job_id: str) -> IngestionJob | None:
-        ...
+    async def get(self, job_id: str) -> IngestionJob | None: ...
 
-    async def update(self, job: IngestionJob) -> IngestionJob:
-        ...
+    async def update(self, job: IngestionJob) -> IngestionJob: ...
 
 
 class Document(BaseModel):
