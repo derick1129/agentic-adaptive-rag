@@ -35,7 +35,9 @@ class EmbeddingProvider(Protocol):
     @property
     def dimensions(self) -> int: ...
 
-    def embed(self, texts: Sequence[str]) -> list[list[float]]: ...
+    def embed(
+        self, texts: Sequence[str], *, input_type: str | None = None
+    ) -> list[list[float]]: ...
 
 
 class IndexWriter(Protocol):
@@ -70,7 +72,9 @@ class HashEmbeddingProvider:
     def dimensions(self) -> int:
         return self._dimensions
 
-    def embed(self, texts: Sequence[str]) -> list[list[float]]:
+    def embed(
+        self, texts: Sequence[str], *, input_type: str | None = None
+    ) -> list[list[float]]:
         vectors: list[list[float]] = []
         for text in texts:
             values = []

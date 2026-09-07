@@ -1,5 +1,6 @@
-"""Backend-neutral hybrid retrieval and OpenSearch adapters."""
+"""Backend-neutral hybrid retrieval and NeonDB/BM25 adapters."""
 
+from adaptive.retrieval.bm25_stage import BM25Stage
 from adaptive.retrieval.contracts import (
     EmbeddingProvider,
     HashEmbeddingProvider,
@@ -9,7 +10,7 @@ from adaptive.retrieval.contracts import (
     ScoredChunk,
 )
 from adaptive.retrieval.hybrid import HybridRetrieverService
-from adaptive.retrieval.opensearch import OpenSearchIndexWriter
+from adaptive.retrieval.neondb_dense import NeonDBDenseStage
 
 __all__ = [
     "EmbeddingProvider",
@@ -19,5 +20,6 @@ __all__ = [
     "Reranker",
     "ScoredChunk",
     "HybridRetrieverService",
-    "OpenSearchIndexWriter",
+    "BM25Stage",
+    "NeonDBDenseStage",
 ]

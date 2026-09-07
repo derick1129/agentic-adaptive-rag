@@ -384,7 +384,9 @@ class Generator(Protocol):
 class EmbeddingProvider(Protocol):
     """Embedding provider protocol."""
 
-    async def embed(self, texts: list[str]) -> list[list[float]]: ...
+    async def embed(
+        self, texts: list[str], *, input_type: str | None = None
+    ) -> list[list[float]]: ...
 
     @property
     def dimensions(self) -> int: ...
