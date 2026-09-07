@@ -85,7 +85,7 @@ async def run_query(
     response_mode = response_mode or policy.response_mode
 
     if embedding is None and deps.embedding_provider is not None:
-        embedding = (await _maybe(deps.embedding_provider.embed([query])))[0]
+        embedding = (await _maybe(deps.embedding_provider.embed([query], input_type="query")))[0]
     if deps.cache is not None and embedding is not None:
         lookup = CacheLookup(
             query_text=query,

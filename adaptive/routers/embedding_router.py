@@ -38,7 +38,7 @@ class EmbeddingRouter:
             query_context = QueryContext(
                 query=query_context, request_context=context, budget=budget
             )
-        vectors = await _maybe(self.embedder.embed([query_context.query]))
+        vectors = await _maybe(self.embedder.embed([query_context.query], input_type="query"))
         query_vector = vectors[0]
         label, (depth, tool, seed) = max(
             self.seeds.items(), key=lambda item: _cosine(query_vector, item[1][2])
