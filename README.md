@@ -22,7 +22,7 @@
   <img src="docs/assets/architecture.png" alt="Adaptive Agentic RAG Architecture" width="100%" />
 </p>
 
-The **Adaptive Agentic RAG** engine combines dynamic query routing, multi-tier hybrid data stores, reciprocal rank fusion (RRF), neural cross-encoder re-ranking, and high-speed semantic vector caching with end-to-end OpenTelemetry tracing.
+The **Adaptive Agentic RAG** engine combines dynamic query routing, multi-method hybrid retrieval, reciprocal rank fusion (RRF), neural cross-encoder re-ranking, and high-speed semantic vector caching with end-to-end OpenTelemetry tracing.
 
 ### Architectural Breakdown
 
@@ -30,44 +30,45 @@ The **Adaptive Agentic RAG** engine combines dynamic query routing, multi-tier h
 [ Client Query / Ingestion ]
            │
            ▼
-[ Adaptive Memory Router ] ──── {intent, entity, temporal_scope}
-     │         │          │              │
-  hot_read  bm25_log  semantic_match  doc_traverse
-     │         │          │              │
-     ▼         ▼          ▼              ▼
+[ Adaptive Query Router ] ──── {intent, depth, tool_choice}
+     │           │             │            │
+cache_probe  bm25_search  vector_ann  tool_dispatch
+     │           │             │            │
+     ▼           ▼             ▼            ▼
 ┌────────────────────────────────────────────────────────┐
-│              4-Tier Hybrid Memory Stores               │
-│  • Tier 1: Redis Semantic Cache (Sub-50ms Hit Bypass)  │
-│  • Tier 2: BM25 Sparse Lexical Store                   │
-│  • Tier 3: Dense pgvector HNSW Embedding Store         │
-│  • Tier 4: PostgreSQL Relational Knowledge Repository   │
+│          Hybrid Retrieval & Search Methods             │
+│  1. Semantic Cache Probe (RediSearch Vector <50ms)     │
+│  2. BM25 Lexical Keyword Search (Rank-BM25 Sparse)     │
+│  3. Dense Vector ANN Search (pgvector HNSW Cosine)     │
+│  4. Specialized Tool Retrieval (Text-to-SQL & Web)     │
 └────────────────────────────────────────────────────────┘
-     │         │          │              │
-     └─────────┼──────────┴──────────────┘
-               ▼
+     │           │             │            │
+     └───────────┼─────────────┴────────────┘
+                 ▼
 ┌────────────────────────────────────────────────────────┐
 │     Reciprocal Rank Fusion (RRF) & Neural Reranker     │
+│   • RRF Candidate Merging (k=60)                       │
 │   • NVIDIA NIM Cross-Encoder (Nemotron-Rerank-VL-1B)   │
-│   • Temporal Validity Filter & Token Budget Guardrails │
+│   • Evidence Validation & Token Budget Guardrails      │
 └────────────────────────────────────────────────────────┘
-               │
-               ▼
+                 │
+                 ▼
 [ Grounded Answer Synthesis & Citations [1][2] ] ──► (cache_put)
 ```
 
-1. **Client Action / Query**: Tenant-scoped payloads arrive via REST API, file upload, or CLI with authenticated access control lists (`ACL`) and request context timestamps.
-2. **Adaptive Memory Router**: Inspects query intent, complexity, and temporal scope to govern execution depth (Direct Route, Balanced Hybrid, or Deep Reasoning Escalation).
-3. **4-Tier Hybrid Memory Stores**:
-   - **Tier 1: Redis Semantic Cache**: High-velocity RediSearch vector index evaluating cosine similarity. If similarity meets the threshold (`CACHE_SIMILARITY_THRESHOLD`), queries achieve a **sub-50ms cache hit**, returning pre-synthesized grounded answers immediately.
-   - **Tier 2: BM25 Sparse Store**: Exact-match lexical scoring using `rank-bm25`. Indexes are dynamically invalidated and rebuilt per-tenant as soon as new chunks are ingested.
-   - **Tier 3: Dense Vector Store**: Semantic vector similarity powered by PostgreSQL with `pgvector` HNSW indexes and asymmetric embeddings (`input_type="passage"` for ingestion, `"query"` for retrieval).
-   - **Tier 4: Relational Knowledge Store**: PostgreSQL ACID persistence for chunk versioning, deduplication (SHA-256), parent document lineage, and tenant isolation.
+1. **Client Action / Query**: Tenant-scoped payloads arrive via REST API, file upload, or CLI with authenticated access control lists (`ACL`), request context timestamps, and token budgets.
+2. **Adaptive Query Router**: Inspects query intent, complexity, and domain scope to determine execution depth (`parametric`, `single_hop`, `multi_hop`) and tool choice (`vector`, `sql`, `web`, `parametric`), with policy-driven confidence escalation.
+3. **Hybrid Retrieval & Search Methods**:
+   - **Method 1: Semantic Cache Probe**: High-velocity RediSearch vector cosine distance check. If similarity meets `CACHE_SIMILARITY_THRESHOLD`, queries achieve a **sub-50ms cache hit**, immediately bypassing downstream retrieval and synthesis.
+   - **Method 2: BM25 Lexical Keyword Search**: Exact-match keyword scoring using `rank-bm25`. Crucial for identifiers, error codes, and domain acronyms. Indexes are dynamically invalidated per tenant upon document ingestion.
+   - **Method 3: Dense Vector ANN Search**: High-recall semantic vector similarity powered by PostgreSQL with `pgvector` HNSW indexes and asymmetric embeddings (`input_type="passage"` for ingestion, `"query"` for retrieval).
+   - **Method 4: Specialized Tool Retrieval**: Structured Text-to-SQL queries against relational databases, live Web Search tool execution, or multi-hop agentic graph traversal when deep reasoning is needed.
 4. **Reciprocal Rank Fusion & Neural Reranker**:
-   - Fuses sparse lexical scores and dense vector scores via Reciprocal Rank Fusion (`RRF k=60`).
-   - Re-ranks top candidates using **NVIDIA NIM Cross-Encoder** (`nvidia/llama-nemotron-rerank-vl-1b-v2`).
-   - Applies temporal validity filters and strictly enforces context token budgets (`RETRIEVAL_CONTEXT_TOKEN_BUDGET`).
-5. **Synthesized Context & Grounded Response**: Context assembly feeds into the generation engine (Meta LLaMA 3.1 8B Instruct / OpenAI GPT-4o-mini), enforcing strict inline evidence citations (`[1]`, `[2]`). On cache miss, synthesized answers are asynchronously persisted into the Redis semantic cache.
-6. **Observability & Feedback Loop**: Continuous OTLP span collection via **Ariadne Phoenix**, profiling latency, token consumption, and retrieval efficacy, protected by an automated zero-leakage redaction filter.
+   - Fuses ranked candidate lists from lexical and dense searches via Reciprocal Rank Fusion (`RRF k=60`).
+   - Re-ranks top candidates using the **NVIDIA NIM Cross-Encoder** (`nvidia/llama-nemotron-rerank-vl-1b-v2`).
+   - Applies evidence validation filters and strictly enforces context token budgets (`RETRIEVAL_CONTEXT_TOKEN_BUDGET`).
+5. **Grounded Answer Synthesis**: Context assembly feeds into the generation engine (Meta LLaMA 3.1 8B Instruct / OpenAI GPT-4o-mini), enforcing strict inline evidence citations (`[1]`, `[2]`). Newly synthesized answers are asynchronously cached in Redis for future hits.
+6. **Observability & Feedback Loop**: Continuous OTLP span collection via **Ariadne Phoenix**, profiling latency, token consumption, and retrieval quality, protected by an automated zero-leakage prompt and PII redaction filter.
 
 ---
 
