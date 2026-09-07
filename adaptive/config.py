@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import parse_qs, urlparse, urlunparse
 
 from pydantic import Field, ValidationInfo, field_validator
 from pydantic_core import PydanticCustomError
@@ -33,6 +34,15 @@ class Settings(BaseSettings):
     database_url: str = Field(alias="DATABASE_URL")
     database_pool_size: int = Field(default=10, alias="DATABASE_POOL_SIZE", ge=1, le=100)
     database_max_overflow: int = Field(default=20, alias="DATABASE_MAX_OVERFLOW", ge=0, le=100)
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: str, info: ValidationInfo) -> str:
+        parsed = urlparse(v)
+        query = parse_qs(parsed.query)
+        query.pop("channel_binding", None)
+        new_query = "&".join(f"{k}={val}" for k, vals in query.items() for val in vals)
+        return urlunparse(parsed._replace(query=new_query))
 
     # OpenSearch
     opensearch_url: str = Field(alias="OPENSEARCH_URL")
@@ -68,6 +78,22 @@ class Settings(BaseSettings):
         default=60, alias="GENERATION_TIMEOUT_SECONDS", ge=1, le=600
     )
     generation_max_retries: int = Field(default=3, alias="GENERATION_MAX_RETRIES", ge=0, le=10)
+
+    # NVIDIA NIMS Fallback
+    nims_base_url: str = Field(
+        default="https://integrate.api.nvidia.com/v1", alias="NIMS_BASE_URL"
+    )
+    nims_api_key: str = Field(default="", alias="NIMS_API_KEY")
+    # Optional: NIMS-specific model overrides for fallback
+    nims_embedding_model: str = Field(
+        default="nvidia/llama-nemotron-embed-vl-1b-v2", alias="NIMS_EMBEDDING_MODEL"
+    )
+    nims_generation_model: str = Field(
+        default="meta/llama-3.1-8b-instruct", alias="NIMS_GENERATION_MODEL"
+    )
+    nims_rerank_model: str = Field(
+        default="nvidia/llama-nemotron-rerank-vl-1b-v2", alias="NIMS_RERANK_MODEL"
+    )
 
     # Router
     router_provider: Literal["llm", "embedding", "policy"] = Field(
@@ -115,6 +141,13 @@ class Settings(BaseSettings):
     def sql_allowed_schemas_list(self) -> list[str]:
         return [s.strip() for s in self.sql_allowed_schemas.split(",") if s.strip()]
 
+    # Redis
+    redis_host: str = Field(default="localhost", alias="REDIS_HOST")
+    redis_port: int = Field(default=6379, alias="REDIS_PORT")
+    redis_username: str = Field(default="", alias="REDIS_USERNAME")
+    redis_password: str = Field(default="", alias="REDIS_PASSWORD")
+    redis_ssl: bool = Field(default=False, alias="REDIS_SSL")
+
     # Guardrails
     guardrail_input_enabled: bool = Field(default=True, alias="GUARDRAIL_INPUT_ENABLED")
     guardrail_output_enabled: bool = Field(default=True, alias="GUARDRAIL_OUTPUT_ENABLED")
@@ -134,7 +167,6 @@ class Settings(BaseSettings):
         default=120, alias="AGENT_MAX_WALL_TIME_SECONDS", ge=10, le=3600
     )
 
-    # Phoenix Observability
     phoenix_enabled: bool = Field(default=True, alias="PHOENIX_ENABLED")
     phoenix_endpoint: str = Field(
         default="http://localhost:6006/v1/traces", alias="PHOENIX_ENDPOINT"
