@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 730" width="1320" height="730" style="background:#ffffff; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1340 740" width="1340" height="740" style="background:#ffffff; font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
   <defs>
     <!-- Drop Shadow Filters -->
     <filter id="shadow" x="-5%" y="-5%" width="112%" height="118%" filterUnits="userSpaceOnUse">
@@ -30,158 +30,158 @@
   </defs>
 
   <!-- Title Header -->
-  <g transform="translate(660, 44)">
+  <g transform="translate(670, 44)">
     <text text-anchor="middle" font-size="25" font-weight="700" fill="#0f172a" letter-spacing="-0.5">
-      Adaptive Agentic RAG <tspan fill="#64748b" font-weight="400">—</tspan> Multi-Tier Hybrid Retrieval &amp; Cognitive Context Engine
+      Adaptive Agentic RAG <tspan fill="#64748b" font-weight="400">—</tspan> Multi-Method Hybrid Retrieval &amp; Grounded Context Pipeline
     </text>
   </g>
 
   <!-- ==================== TOP SECTION: Observability & Telemetry ==================== -->
   <g transform="translate(485, 75)">
     <!-- Container -->
-    <rect x="0" y="0" width="470" height="122" rx="16" fill="#FAF5FF" stroke="#A855F7" stroke-width="1.8" stroke-dasharray="6,6" opacity="0.95"/>
-    <text x="235" y="24" text-anchor="middle" font-size="12" font-weight="600" fill="#7E22CE" letter-spacing="0.2">
+    <rect x="0" y="0" width="490" height="122" rx="16" fill="#FAF5FF" stroke="#A855F7" stroke-width="1.8" stroke-dasharray="6,6" opacity="0.95"/>
+    <text x="245" y="24" text-anchor="middle" font-size="12" font-weight="600" fill="#7E22CE" letter-spacing="0.2">
       Async Tracing &amp; Telemetry Pipeline (OpenTelemetry + Phoenix Daemon)
     </text>
 
     <!-- Sub-box 1: Trace Manager -->
     <g transform="translate(18, 38)" filter="url(#shadow-sm)">
-      <rect x="0" y="0" width="200" height="68" rx="12" fill="#F3E8FF" stroke="#A855F7" stroke-width="1.4"/>
-      <text x="100" y="27" text-anchor="middle" font-size="12" font-weight="700" fill="#581C87">Trace &amp; Metric Extraction</text>
-      <text x="100" y="44" text-anchor="middle" font-size="10.5" font-weight="500" fill="#7E22CE">(OTLP Spans, Latency &amp; Tokens)</text>
-      <text x="100" y="58" text-anchor="middle" font-size="9" fill="#9333EA">Phoenix gRPC / HTTP :6006</text>
+      <rect x="0" y="0" width="210" height="68" rx="12" fill="#F3E8FF" stroke="#A855F7" stroke-width="1.4"/>
+      <text x="105" y="27" text-anchor="middle" font-size="12" font-weight="700" fill="#581C87">Trace &amp; Metric Extraction</text>
+      <text x="105" y="44" text-anchor="middle" font-size="10.5" font-weight="500" fill="#7E22CE">(OTLP Spans, Latency &amp; Tokens)</text>
+      <text x="105" y="58" text-anchor="middle" font-size="9" fill="#9333EA">Phoenix gRPC / HTTP :6006</text>
     </g>
 
     <!-- Bidirectional Arrows between Trace and Redaction -->
-    <path d="M 224 64 L 246 64" fill="none" stroke="#A855F7" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
-    <path d="M 246 78 L 224 78" fill="none" stroke="#A855F7" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
+    <path d="M 234 64 L 256 64" fill="none" stroke="#A855F7" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
+    <path d="M 256 78 L 234 78" fill="none" stroke="#A855F7" stroke-width="1.6" marker-end="url(#arrow-purple)"/>
 
     <!-- Sub-box 2: Privacy Redactor -->
-    <g transform="translate(252, 38)" filter="url(#shadow-sm)">
-      <rect x="0" y="0" width="200" height="68" rx="12" fill="#F3E8FF" stroke="#A855F7" stroke-width="1.4"/>
-      <text x="100" y="27" text-anchor="middle" font-size="12" font-weight="700" fill="#581C87">Automated Redaction</text>
-      <text x="100" y="44" text-anchor="middle" font-size="10.5" font-weight="500" fill="#7E22CE">(Prompts, Docs &amp; PII Scrubbing)</text>
-      <text x="100" y="58" text-anchor="middle" font-size="9" fill="#9333EA">Zero-Leakage Telemetry Filter</text>
+    <g transform="translate(262, 38)" filter="url(#shadow-sm)">
+      <rect x="0" y="0" width="210" height="68" rx="12" fill="#F3E8FF" stroke="#A855F7" stroke-width="1.4"/>
+      <text x="105" y="27" text-anchor="middle" font-size="12" font-weight="700" fill="#581C87">Automated Redaction</text>
+      <text x="105" y="44" text-anchor="middle" font-size="10.5" font-weight="500" fill="#7E22CE">(Prompts, Docs &amp; PII Scrubbing)</text>
+      <text x="105" y="58" text-anchor="middle" font-size="9" fill="#9333EA">Zero-Leakage Telemetry Filter</text>
     </g>
   </g>
 
   <!-- ==================== LEFT: Agent Action / Query ==================== -->
-  <g transform="translate(28, 355)" filter="url(#shadow)">
-    <rect x="0" y="0" width="175" height="100" rx="22" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
-    <text x="87" y="32" text-anchor="middle" font-size="13" font-weight="700" fill="#1E3A8A">Agent Action / Query</text>
-    <text x="87" y="53" text-anchor="middle" font-size="11" font-weight="500" fill="#2563EB">(Context + Timestamp [t_now])</text>
-    <text x="87" y="72" text-anchor="middle" font-size="10.5" fill="#3B82F6">Tenant ID &amp; ACL Scope</text>
-    <text x="87" y="87" text-anchor="middle" font-size="9.5" fill="#60A5FA" font-style="italic">REST / Upload / Web UI</text>
+  <g transform="translate(24, 355)" filter="url(#shadow)">
+    <rect x="0" y="0" width="180" height="102" rx="22" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
+    <text x="90" y="32" text-anchor="middle" font-size="13" font-weight="700" fill="#1E3A8A">Agent Action / Query</text>
+    <text x="90" y="53" text-anchor="middle" font-size="11" font-weight="500" fill="#2563EB">(Context + Timestamp [t_now])</text>
+    <text x="90" y="72" text-anchor="middle" font-size="10.5" fill="#3B82F6">Tenant ID &amp; ACL Scope</text>
+    <text x="90" y="88" text-anchor="middle" font-size="9.5" fill="#60A5FA" font-style="italic">REST / Upload / Web UI</text>
   </g>
 
   <!-- Arrow: Input -> Router -->
-  <path d="M 203 405 L 238 405" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <path d="M 204 406 L 238 406" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
 
   <!-- ==================== ROUTER: Adaptive Cognitive Router ==================== -->
   <g transform="translate(244, 332)" filter="url(#shadow)">
     <rect x="0" y="0" width="202" height="148" rx="16" fill="#FEFCE8" stroke="#EAB308" stroke-width="2"/>
-    <text x="101" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#854D0E">Adaptive Memory Router</text>
-    <text x="101" y="50" text-anchor="middle" font-size="10.5" font-family="monospace" font-weight="600" fill="#A16207">{intent, entity, temporal_scope}</text>
-    <text x="101" y="73" text-anchor="middle" font-size="11.5" font-weight="600" fill="#854D0E">Route / Dynamic Context</text>
-    <text x="101" y="91" text-anchor="middle" font-size="11.5" font-weight="600" fill="#854D0E">Governor &amp; Escalator</text>
-    <rect x="18" y="106" width="166" height="26" rx="8" fill="#FEF08A" stroke="#CA8A04" stroke-width="1"/>
-    <text x="101" y="123" text-anchor="middle" font-size="10" font-weight="600" fill="#713F12">Direct / Hybrid / Deep Escalation</text>
+    <text x="101" y="28" text-anchor="middle" font-size="13" font-weight="700" fill="#854D0E">Adaptive Query Router</text>
+    <text x="101" y="47" text-anchor="middle" font-size="10" font-family="monospace" font-weight="600" fill="#A16207">{intent, depth, tool_choice}</text>
+    <text x="101" y="69" text-anchor="middle" font-size="11" font-weight="600" fill="#854D0E">Depth: parametric / 1-hop / multi-hop</text>
+    <text x="101" y="86" text-anchor="middle" font-size="11" font-weight="600" fill="#854D0E">Tool: vector / sql / web / bypass</text>
+    <rect x="16" y="104" width="170" height="28" rx="8" fill="#FEF08A" stroke="#CA8A04" stroke-width="1"/>
+    <text x="101" y="122" text-anchor="middle" font-size="9.5" font-weight="600" fill="#713F12">Policy Route &amp; Confidence Escalator</text>
   </g>
 
-  <!-- ==================== CENTER: 4-Tier Hybrid Memory Stores ==================== -->
+  <!-- ==================== CENTER: Parallel Hybrid Retrieval & Search Methods ==================== -->
   <g transform="translate(485, 226)">
     <!-- Container -->
-    <rect x="0" y="0" width="276" height="466" rx="18" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.8" stroke-dasharray="6,6"/>
-    <text x="138" y="26" text-anchor="middle" font-size="13" font-weight="700" fill="#475569" letter-spacing="0.3">
-      4-Tier Hybrid Memory Stores
+    <rect x="0" y="0" width="286" height="466" rx="18" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.8" stroke-dasharray="6,6"/>
+    <text x="143" y="26" text-anchor="middle" font-size="13" font-weight="700" fill="#475569" letter-spacing="0.3">
+      Hybrid Retrieval &amp; Search Methods
     </text>
 
-    <!-- Tier 1: Working Memory & Semantic Cache -->
+    <!-- Method 1: Semantic Cache Lookup -->
     <g transform="translate(18, 42)" filter="url(#shadow-sm)">
-      <rect x="0" y="0" width="240" height="86" rx="12" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.6"/>
-      <text x="120" y="24" text-anchor="middle" font-size="12" font-weight="700" fill="#14532D">Tier 1: Redis Semantic Cache</text>
-      <text x="120" y="42" text-anchor="middle" font-size="10.5" font-weight="600" fill="#15803D">(RediSearch Vector Index + Cosine)</text>
-      <text x="120" y="58" text-anchor="middle" font-size="9.5" fill="#166534">Working Context &amp; Instant Sub-50ms Hit</text>
-      <text x="120" y="73" text-anchor="middle" font-size="9" fill="#15803D" font-weight="500">[tenant_id, similarity_thresh, TTL]</text>
+      <rect x="0" y="0" width="250" height="86" rx="12" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.6"/>
+      <text x="125" y="23" text-anchor="middle" font-size="12" font-weight="700" fill="#14532D">1. Semantic Cache Probe</text>
+      <text x="125" y="41" text-anchor="middle" font-size="10.5" font-weight="600" fill="#15803D">(RediSearch Vector Cosine Distance)</text>
+      <text x="125" y="57" text-anchor="middle" font-size="9.5" fill="#166534">Pre-Synthesized Cache Hit (&lt;50ms)</text>
+      <text x="125" y="72" text-anchor="middle" font-size="9" fill="#15803D" font-weight="500">[Backend: Redis Stack 7.2]</text>
     </g>
 
-    <!-- Tier 2: Episodic BM25 Store -->
+    <!-- Method 2: Sparse BM25 Keyword Search -->
     <g transform="translate(18, 146)" filter="url(#shadow-sm)">
-      <rect x="0" y="0" width="240" height="86" rx="12" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.6"/>
-      <text x="120" y="24" text-anchor="middle" font-size="12" font-weight="700" fill="#14532D">Tier 2: BM25 Keyword Stage</text>
-      <text x="120" y="42" text-anchor="middle" font-size="10.5" font-weight="600" fill="#15803D">(Rank-BM25 Sparse Lexical Engine)</text>
-      <text x="120" y="58" text-anchor="middle" font-size="9.5" fill="#166534">Exact Terms, Acronyms &amp; Identifiers</text>
-      <text x="120" y="73" text-anchor="middle" font-size="9" fill="#15803D" font-weight="500">[dynamic_invalidation_on_ingest]</text>
+      <rect x="0" y="0" width="250" height="86" rx="12" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.6"/>
+      <text x="125" y="23" text-anchor="middle" font-size="12" font-weight="700" fill="#14532D">2. BM25 Lexical Keyword Search</text>
+      <text x="125" y="41" text-anchor="middle" font-size="10.5" font-weight="600" fill="#15803D">(Rank-BM25 Sparse Term Scoring)</text>
+      <text x="125" y="57" text-anchor="middle" font-size="9.5" fill="#166534">Exact Terms, Acronyms &amp; Identifiers</text>
+      <text x="125" y="72" text-anchor="middle" font-size="9" fill="#15803D" font-weight="500">[Dynamic per-tenant index invalidation]</text>
     </g>
 
-    <!-- Tier 3: Dense Vector Stage -->
+    <!-- Method 3: Dense Vector ANN Search -->
     <g transform="translate(18, 250)" filter="url(#shadow-sm)">
-      <rect x="0" y="0" width="240" height="86" rx="12" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.6"/>
-      <text x="120" y="24" text-anchor="middle" font-size="12" font-weight="700" fill="#14532D">Tier 3: Dense Vector Store</text>
-      <text x="120" y="42" text-anchor="middle" font-size="10.5" font-weight="600" fill="#15803D">(NeonDB / PostgreSQL + pgvector)</text>
-      <text x="120" y="58" text-anchor="middle" font-size="9.5" fill="#166534">HNSW / Cosine Asymmetric Embeddings</text>
-      <text x="120" y="73" text-anchor="middle" font-size="9" fill="#15803D" font-weight="500">[NVIDIA Nemotron / OpenAI 3-Small]</text>
+      <rect x="0" y="0" width="250" height="86" rx="12" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.6"/>
+      <text x="125" y="23" text-anchor="middle" font-size="12" font-weight="700" fill="#14532D">3. Dense Vector ANN Search</text>
+      <text x="125" y="41" text-anchor="middle" font-size="10.5" font-weight="600" fill="#15803D">(pgvector HNSW Cosine Similarity)</text>
+      <text x="125" y="57" text-anchor="middle" font-size="9.5" fill="#166534">Asymmetric Query/Passage Embeddings</text>
+      <text x="125" y="72" text-anchor="middle" font-size="9" fill="#15803D" font-weight="500">[Backend: PostgreSQL 16 + pgvector]</text>
     </g>
 
-    <!-- Tier 4: Document Repository -->
+    <!-- Method 4: Multi-Route Specialized Retrieval -->
     <g transform="translate(18, 354)" filter="url(#shadow-sm)">
-      <rect x="0" y="0" width="240" height="86" rx="12" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.6"/>
-      <text x="120" y="24" text-anchor="middle" font-size="12" font-weight="700" fill="#14532D">Tier 4: Relational Knowledge Store</text>
-      <text x="120" y="42" text-anchor="middle" font-size="10.5" font-weight="600" fill="#15803D">(PostgreSQL Chunk &amp; Version Store)</text>
-      <text x="120" y="58" text-anchor="middle" font-size="9.5" fill="#166534">Multi-Tenant Metadata &amp; Document ACLs</text>
-      <text x="120" y="73" text-anchor="middle" font-size="9" fill="#15803D" font-weight="500">[valid_from, valid_to, sha256_hash]</text>
+      <rect x="0" y="0" width="250" height="86" rx="12" fill="#DCFCE7" stroke="#22C55E" stroke-width="1.6"/>
+      <text x="125" y="23" text-anchor="middle" font-size="12" font-weight="700" fill="#14532D">4. Specialized Tool Retrieval</text>
+      <text x="125" y="41" text-anchor="middle" font-size="10.5" font-weight="600" fill="#15803D">(Text-to-SQL &amp; Web Search Tools)</text>
+      <text x="125" y="57" text-anchor="middle" font-size="9.5" fill="#166534">Multi-Hop Query Reasoning &amp; Graph</text>
+      <text x="125" y="72" text-anchor="middle" font-size="9" fill="#15803D" font-weight="500">[Relational SQL DB / External APIs]</text>
     </g>
   </g>
 
-  <!-- ==================== ROUTER -> 4 TIERS CONNECTORS ==================== -->
-  <!-- Router to Tier 1 -->
-  <path d="M 446 372 C 472 372, 477 311, 497 311" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
-  <rect x="439" y="327" width="62" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/>
-  <text x="470" y="339" text-anchor="middle" font-size="9" font-family="monospace" fill="#475569">hot_read</text>
+  <!-- ==================== ROUTER -> RETRIEVAL METHODS CONNECTORS ==================== -->
+  <!-- Router to Method 1 -->
+  <path d="M 446 372 C 472 372, 480 311, 501 311" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="444" y="327" width="62" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/>
+  <text x="475" y="339" text-anchor="middle" font-size="9" font-family="monospace" fill="#475569">cache_probe</text>
 
-  <!-- Router to Tier 2 -->
-  <path d="M 446 395 C 472 395, 477 415, 497 415" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
-  <rect x="439" y="398" width="62" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/>
-  <text x="470" y="410" text-anchor="middle" font-size="9" font-family="monospace" fill="#475569">bm25_log</text>
+  <!-- Router to Method 2 -->
+  <path d="M 446 395 C 472 395, 480 415, 501 415" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="444" y="398" width="62" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/>
+  <text x="475" y="410" text-anchor="middle" font-size="9" font-family="monospace" fill="#475569">bm25_search</text>
 
-  <!-- Router to Tier 3 -->
-  <path d="M 446 418 C 472 418, 477 519, 497 519" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
-  <rect x="424" y="468" width="76" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/>
-  <text x="462" y="480" text-anchor="middle" font-size="9" font-family="monospace" fill="#475569">semantic_match</text>
+  <!-- Router to Method 3 -->
+  <path d="M 446 418 C 472 418, 480 519, 501 519" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="432" y="468" width="72" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/>
+  <text x="468" y="480" text-anchor="middle" font-size="9" font-family="monospace" fill="#475569">vector_ann</text>
 
-  <!-- Router to Tier 4 -->
-  <path d="M 446 441 C 472 441, 477 623, 497 623" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
-  <rect x="427" y="546" width="74" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/>
-  <text x="464" y="558" text-anchor="middle" font-size="9" font-family="monospace" fill="#475569">doc_traverse</text>
+  <!-- Router to Method 4 -->
+  <path d="M 446 441 C 472 441, 480 623, 501 623" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <rect x="430" y="546" width="76" height="18" rx="4" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.8"/>
+  <text x="468" y="558" text-anchor="middle" font-size="9" font-family="monospace" fill="#475569">tool_dispatch</text>
 
   <!-- ==================== RIGHT-MIDDLE: Reciprocal Rank Fusion & Guardrails ==================== -->
-  <g transform="translate(830, 332)" filter="url(#shadow)">
+  <g transform="translate(845, 332)" filter="url(#shadow)">
     <rect x="0" y="0" width="206" height="152" rx="16" fill="#FEF2F2" stroke="#EF4444" stroke-width="2"/>
     <text x="103" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#991B1B">Reciprocal Rank</text>
     <text x="103" y="48" text-anchor="middle" font-size="13" font-weight="700" fill="#991B1B">Fusion &amp; Guardrails</text>
-    <text x="103" y="68" text-anchor="middle" font-size="10.5" font-weight="600" fill="#B91C1C">(RRF k=60 + Cross-Encoder)</text>
+    <text x="103" y="68" text-anchor="middle" font-size="10.5" font-weight="600" fill="#B91C1C">(RRF k=60 Candidate Fusion)</text>
     <rect x="14" y="80" width="178" height="32" rx="8" fill="#FEE2E2" stroke="#DC2626" stroke-width="1"/>
     <text x="103" y="95" text-anchor="middle" font-size="10" font-weight="700" fill="#7F1D1D">NVIDIA NIM Reranker</text>
     <text x="103" y="106" text-anchor="middle" font-size="8.5" font-family="monospace" fill="#991B1B">llama-nemotron-rerank-vl-1b</text>
-    <text x="103" y="128" text-anchor="middle" font-size="10" font-weight="500" fill="#B91C1C">Temporal Validity Filter</text>
+    <text x="103" y="128" text-anchor="middle" font-size="10" font-weight="500" fill="#B91C1C">Evidence Validation Filter</text>
     <text x="103" y="142" text-anchor="middle" font-size="10" font-weight="500" fill="#B91C1C">+ Token Budgeter</text>
   </g>
 
-  <!-- ==================== TIERS -> FUSION CONNECTORS ==================== -->
-  <!-- Tier 1 to Fusion (on cache miss) -->
-  <path d="M 743 311 C 780 311, 788 372, 824 372" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
-  <!-- Tier 2 to Fusion -->
-  <path d="M 743 415 L 824 408" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
-  <!-- Tier 3 to Fusion -->
-  <path d="M 743 519 C 780 519, 788 440, 824 440" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
-  <!-- Tier 4 to Fusion -->
-  <path d="M 743 623 C 786 623, 792 468, 824 468" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <!-- ==================== RETRIEVAL METHODS -> FUSION CONNECTORS ==================== -->
+  <!-- Method 1 to Fusion (on cache miss path) -->
+  <path d="M 753 311 C 792 311, 802 372, 839 372" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <!-- Method 2 to Fusion -->
+  <path d="M 753 415 L 839 408" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <!-- Method 3 to Fusion -->
+  <path d="M 753 519 C 792 519, 802 440, 839 440" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
+  <!-- Method 4 to Fusion -->
+  <path d="M 753 623 C 800 623, 808 468, 839 468" fill="none" stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow-slate)"/>
 
-  <!-- ==================== RIGHT: Synthesized Context & Answer ==================== -->
-  <g transform="translate(1095, 342)" filter="url(#shadow)">
+  <!-- ==================== RIGHT: Grounded Answer Synthesis ==================== -->
+  <g transform="translate(1110, 342)" filter="url(#shadow)">
     <rect x="0" y="0" width="195" height="132" rx="22" fill="#EFF6FF" stroke="#3B82F6" stroke-width="2"/>
-    <text x="97" y="32" text-anchor="middle" font-size="13" font-weight="700" fill="#1E3A8A">Synthesized Context +</text>
-    <text x="97" y="52" text-anchor="middle" font-size="13" font-weight="700" fill="#1E3A8A">Grounded Response</text>
+    <text x="97" y="32" text-anchor="middle" font-size="13" font-weight="700" fill="#1E3A8A">Grounded Answer</text>
+    <text x="97" y="52" text-anchor="middle" font-size="13" font-weight="700" fill="#1E3A8A">Synthesis &amp; Citations</text>
     <text x="97" y="74" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1D4ED8">(Deterministic Citations [1][2],</text>
     <text x="97" y="90" text-anchor="middle" font-size="10.5" font-weight="600" fill="#1D4ED8">Lean Context Budget)</text>
     <rect x="14" y="102" width="167" height="20" rx="6" fill="#DBEAFE" stroke="#3B82F6" stroke-width="0.8"/>
@@ -189,22 +189,22 @@
   </g>
 
   <!-- Arrow: Fusion -> Synthesized Output -->
-  <path d="M 1036 408 L 1089 408" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <path d="M 1051 408 L 1104 408" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
 
-  <!-- ==================== TOP RECONCILIATION / SLEEP-CYCLE ARROWS ==================== -->
-  <!-- Top Daemon to Tier 1, 2, 3, 4 -->
-  <path d="M 780 197 C 780 210, 746 240, 746 283" fill="none" stroke="#9333EA" stroke-width="1.6" stroke-dasharray="4,4" marker-end="url(#arrow-purple)"/>
+  <!-- ==================== TOP RECONCILIATION / TELEMETRY ARROWS ==================== -->
+  <!-- Top Daemon to Methods -->
+  <path d="M 795 197 C 795 210, 758 240, 758 283" fill="none" stroke="#9333EA" stroke-width="1.6" stroke-dasharray="4,4" marker-end="url(#arrow-purple)"/>
   <!-- Top Daemon to Fusion & Guardrails -->
-  <path d="M 885 197 C 885 250, 915 280, 915 327" fill="none" stroke="#9333EA" stroke-width="1.6" stroke-dasharray="4,4" marker-end="url(#arrow-purple)"/>
+  <path d="M 900 197 C 900 250, 930 280, 930 327" fill="none" stroke="#9333EA" stroke-width="1.6" stroke-dasharray="4,4" marker-end="url(#arrow-purple)"/>
 
-  <!-- Fast-Path Cache Hit Direct Bypass Arrow (Tier 1 -> Synthesized Output) -->
-  <path d="M 738 287 C 785 264, 1045 260, 1130 337" fill="none" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="5,5" marker-end="url(#arrow-green)"/>
-  <rect x="880" y="254" width="158" height="20" rx="6" fill="#ffffff" stroke="#86EFAC" stroke-width="1"/>
-  <text x="959" y="268" text-anchor="middle" font-size="9.5" font-weight="700" fill="#15803D">⚡ sub-50ms cache_hit bypass</text>
+  <!-- Fast-Path Cache Hit Direct Bypass Arrow (Method 1 -> Synthesized Output) -->
+  <path d="M 748 287 C 800 264, 1060 260, 1145 337" fill="none" stroke="#16A34A" stroke-width="1.8" stroke-dasharray="5,5" marker-end="url(#arrow-green)"/>
+  <rect x="895" y="254" width="158" height="20" rx="6" fill="#ffffff" stroke="#86EFAC" stroke-width="1"/>
+  <text x="974" y="268" text-anchor="middle" font-size="9.5" font-weight="700" fill="#15803D">⚡ sub-50ms cache_hit bypass</text>
 
-  <!-- Cache Put Writeback Arrow (Synthesized Output -> Tier 1) -->
-  <path d="M 1192 474 C 1192 682, 775 665, 748 350" fill="none" stroke="#2563EB" stroke-width="1.4" stroke-dasharray="4,4" opacity="0.65" marker-end="url(#arrow-blue)"/>
-  <rect x="905" y="660" width="168" height="20" rx="4" fill="#ffffff" stroke="#BFDBFE" stroke-width="0.8"/>
-  <text x="989" y="674" text-anchor="middle" font-size="9.5" font-family="monospace" fill="#1E40AF">cache_put(query, answer, [1])</text>
+  <!-- Cache Put Writeback Arrow (Synthesized Output -> Method 1) -->
+  <path d="M 1207 474 C 1207 682, 790 665, 760 350" fill="none" stroke="#2563EB" stroke-width="1.4" stroke-dasharray="4,4" opacity="0.65" marker-end="url(#arrow-blue)"/>
+  <rect x="920" y="660" width="168" height="20" rx="4" fill="#ffffff" stroke="#BFDBFE" stroke-width="0.8"/>
+  <text x="1004" y="674" text-anchor="middle" font-size="9.5" font-family="monospace" fill="#1E40AF">cache_put(query, answer, [1])</text>
 
 </svg>
