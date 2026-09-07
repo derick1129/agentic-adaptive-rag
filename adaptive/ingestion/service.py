@@ -73,6 +73,7 @@ class IngestionService:
             version_repository = version_repository or DocumentVersionRepository(session)
             chunk_repository = chunk_repository or ChunkRepository(session)
             job_repository = job_repository or IngestionJobRepository(session)
+        self.session = session
         self.documents = document_repository
         self.versions = version_repository
         self.chunks = chunk_repository
@@ -88,11 +89,14 @@ class IngestionService:
         self._memory_documents: dict[str, _MemoryDocument] = {}
 
     async def submit(self, source: Any, context: RequestContext) -> IngestionJob:
-        payload = await _maybe_await(source.read())
-        if isinstance(payload, bytes):
-            payload = SourcePayload(
-                data=payload, filename=source.filename, mime_type=source.mime_type
-            )
+        if hasattr(source, "read"):
+            payload = await _maybe_await(source.read())
+            if isinstance(payload, bytes):
+                payload = SourcePayload(
+                    data=payload, filename=source.filename, mime_type=source.mime_type
+                )
+        else:
+            payload = source
         temp = tempfile.NamedTemporaryFile(prefix="adaptive-ingest-", delete=False)
         try:
             temp.write(payload.data)
@@ -111,6 +115,12 @@ class IngestionService:
         self._jobs[job.id] = job
         if self.jobs is not None:
             await _maybe_await(self.jobs.create(job))
+        return job
+
+    async def get_job(self, job_id: str) -> IngestionJob | None:
+        job = self._jobs.get(job_id)
+        if job is None and self.jobs is not None:
+            job = await _maybe_await(self.jobs.get(job_id))
         return job
 
     async def process(self, job_id: str) -> IngestionJob:
@@ -165,6 +175,8 @@ class IngestionService:
         self._jobs[job.id] = job
         if self.jobs is not None:
             await _maybe_await(self.jobs.update(job))
+        if self.session is not None:
+            self.session.commit()
         return job
 
     async def _parse(self, job: IngestionJob, payload: SourcePayload) -> IngestionJob:
@@ -312,7 +324,7 @@ class IngestionService:
                         )
                     )
         if self.chunks is not None:
-            await _maybe_await(self.chunks.bulk_create(chunks))
+            await _maybe_await(self.chunks.bulk_create(chunks, embeddings=embeddings or None))
         if self.indexer is not None:
             if hasattr(self.indexer, "upsert_chunks"):
                 await _maybe_await(
