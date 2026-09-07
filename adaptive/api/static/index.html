@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Agentic RAG Dashboard</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Adaptive Agentic RAG V1</h1>
+            <p>Self-improving Retrieval-Augmented Generation System</p>
+            <div id="status-indicator" class="status-indicator">
+                <span id="status-text">Checking system status...</span>
+            </div>
+        </header>
+
+        <main>
+            <section class="panel">
+                <h2>Connect / Session</h2>
+                <form id="session-form">
+                    <div class="form-group">
+                        <label for="tenant-id">Tenant ID:</label>
+                        <input type="text" id="tenant-id" name="tenant-id" placeholder="default">
+                    </div>
+                    <div class="form-group">
+                        <label for="subject-id">Subject ID:</label>
+                        <input type="text" id="subject-id" name="subject-id" placeholder="anonymous">
+                    </div>
+                    <div class="form-group">
+                        <label for="session-acl">ACL (comma-separated):</label>
+                        <input type="text" id="session-acl" name="session-acl" placeholder="e.g. read, internal">
+                    </div>
+                    <button type="submit" class="btn-primary">Connect</button>
+                </form>
+                <div id="session-result" class="result-area">
+                    <p>Not connected. Using default tenant and anonymous subject.</p>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Document Ingestion</h2>
+                <form id="ingestion-form">
+                    <div class="form-group">
+                        <label for="filename">Filename:</label>
+                        <input type="text" id="filename" name="filename" required placeholder="Enter document filename">
+                    </div>
+                    <div class="form-group">
+                        <label for="content">Document Content:</label>
+                        <textarea id="content" name="content" rows="6" required placeholder="Enter document content..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="source-type">Source Type:</label>
+                        <select id="source-type" name="source-type">
+                            <option value="upload">Upload</option>
+                            <option value="web">Web</option>
+                            <option value="api">API</option>
+                            <option value="document">Document</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="file-upload">Upload File:</label>
+                        <input type="file" id="file-upload" name="file-upload">
+                        <button type="button" id="upload-btn" class="btn-secondary">Upload File</button>
+                        <div id="upload-result" class="result-area"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="metadata">Metadata (JSON):</label>
+                        <textarea id="metadata" name="metadata" rows="3" placeholder='{"key": "value"}'>{}</textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Submit for Ingestion</button>
+                </form>
+                <div id="ingestion-result" class="result-area"></div>
+            </section>
+
+            <section class="panel">
+                <h2>Document Retrieval</h2>
+                <form id="query-form">
+                    <div class="form-group">
+                        <label for="query-text">Search Query:</label>
+                        <input type="text" id="query-text" name="query-text" required placeholder="Enter your search query">
+                    </div>
+                    <div class="form-group">
+                        <label for="query-limit">Result Limit:</label>
+                        <input type="number" id="query-limit" name="query-limit" min="1" max="100" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="document-ids">Document IDs (comma-separated):</label>
+                        <input type="text" id="document-ids" name="document-ids" placeholder="Leave empty for all documents">
+                    </div>
+                    <button type="submit" class="btn-primary">Search Documents</button>
+                </form>
+                <div id="query-result" class="result-area"></div>
+            </section>
+
+            <section class="panel">
+                <h2>Generation Context</h2>
+                <div id="generation-output" class="result-area">
+                    <p>Retrieved documents will appear here after a search, providing context for generation.</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Adaptive Agentic RAG V1 &copy; 2026</p>
+            <div id="trace-info" class="trace-info">
+                Trace ID: <span id="current-trace-id">N/A</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</EOF>
