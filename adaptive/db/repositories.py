@@ -266,25 +266,28 @@ class ChunkRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    def bulk_create(self, chunks: list[ChunkDraft]):
-        models = [
-            ChunkModel(
-                id=chunk.id,
-                document_id=chunk.document_id,
-                tenant_id=chunk.tenant_id,
-                version=chunk.version,
-                ordinal=chunk.ordinal,
-                text=chunk.text,
-                heading_path=chunk.heading_path,
-                page_number=chunk.page_number,
-                token_count=chunk.token_count,
-                metadata_json=chunk.metadata,
-                acl=sorted(chunk.acl),
-                embedding_status="pending",
-                index_status="pending",
+    def bulk_create(self, chunks: list[ChunkDraft], embeddings: list[list[float]] | None = None):
+        models = []
+        for i, chunk in enumerate(chunks):
+            embedding = embeddings[i] if embeddings and i < len(embeddings) else None
+            models.append(
+                ChunkModel(
+                    id=chunk.id,
+                    document_id=chunk.document_id,
+                    tenant_id=chunk.tenant_id,
+                    version=chunk.version,
+                    ordinal=chunk.ordinal,
+                    text=chunk.text,
+                    heading_path=chunk.heading_path,
+                    page_number=chunk.page_number,
+                    token_count=chunk.token_count,
+                    metadata_json=chunk.metadata,
+                    acl=sorted(chunk.acl),
+                    embedding_status="pending",
+                    index_status="pending",
+                    embedding=embedding,
+                )
             )
-            for chunk in chunks
-        ]
         self.session.add_all(models)
         self.session.flush()
         return models

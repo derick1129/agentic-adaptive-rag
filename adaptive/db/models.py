@@ -139,7 +139,7 @@ class Chunk(Base):
     acl: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     embedding_status: Mapped[str] = mapped_column(String(32), default="pending", nullable=False)
     index_status: Mapped[str] = mapped_column(String(32), default="pending", nullable=False)
-    embedding: Mapped[list[float] | None] = mapped_column(JSON)
+    embedding: Mapped[list[float] | None] = mapped_column(EmbeddingVector())
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)
     __table_args__ = (
         Index("ix_chunks_tenant_document_version", "tenant_id", "document_id", "version"),

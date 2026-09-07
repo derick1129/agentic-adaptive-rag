@@ -9,13 +9,15 @@ from adaptive.db.models import Base
 from alembic import context
 
 config = context.config
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+database_url = get_settings().database_url.replace("postgresql+asyncpg://", "postgresql+psycopg://")
+config.set_main_option("sqlalchemy.url", database_url)
 target_metadata = Base.metadata
 
 
 def run_migrations_offline() -> None:
+    url = get_settings().database_url.replace("postgresql+asyncpg://", "postgresql+psycopg://")
     context.configure(
-        url=get_settings().database_url,
+        url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
