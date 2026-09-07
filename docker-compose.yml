@@ -8,18 +8,66 @@ services:
       APP_HOST: ${APP_HOST:-0.0.0.0}
       APP_PORT: ${APP_PORT:-8000}
       DATABASE_URL: ${DATABASE_URL:-postgresql+asyncpg://postgres:postgres@postgres:5432/adaptive_rag}
-      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://opensearch:9200}
+      # Redis
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_USERNAME: ${REDIS_USERNAME:-}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_SSL: ${REDIS_SSL:-false}
+      # Embedding Provider (OpenAI-compatible)
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      EMBEDDING_API_KEY: ${EMBEDDING_API_KEY:-}
+      EMBEDDING_API_BASE: ${EMBEDDING_API_BASE:-https://api.openai.com/v1}
+      EMBEDDING_BATCH_SIZE: ${EMBEDDING_BATCH_SIZE:-100}
+      EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1536}
+      EMBEDDING_TIMEOUT_SECONDS: ${EMBEDDING_TIMEOUT_SECONDS:-30}
+      EMBEDDING_MAX_RETRIES: ${EMBEDDING_MAX_RETRIES:-3}
+      # Generation Provider (OpenAI-compatible)
+      GENERATION_PROVIDER: ${GENERATION_PROVIDER:-openai}
+      GENERATION_MODEL: ${GENERATION_MODEL:-gpt-4o-mini}
+      GENERATION_API_KEY: ${GENERATION_API_KEY:-}
+      GENERATION_API_BASE: ${GENERATION_API_BASE:-https://api.openai.com/v1}
+      GENERATION_TIMEOUT_SECONDS: ${GENERATION_TIMEOUT_SECONDS:-60}
+      GENERATION_MAX_RETRIES: ${GENERATION_MAX_RETRIES:-3}
+      # NVIDIA NIMS Fallback & Overrides
+      NIMS_BASE_URL: ${NIMS_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      NIMS_API_KEY: ${NIMS_API_KEY:-}
+      NIMS_EMBEDDING_MODEL: ${NIMS_EMBEDDING_MODEL:-nvidia/llama-nemotron-embed-vl-1b-v2}
+      NIMS_GENERATION_MODEL: ${NIMS_GENERATION_MODEL:-}
+      NIMS_RERANK_MODEL: ${NIMS_RERANK_MODEL:-nvidia/llama-nemotron-rerank-vl-1b-v2}
+      # Router
+      ROUTER_PROVIDER: ${ROUTER_PROVIDER:-llm}
+      ROUTER_MODEL: ${ROUTER_MODEL:-gpt-4o-mini}
+      ROUTER_CONFIDENCE_THRESHOLD: ${ROUTER_CONFIDENCE_THRESHOLD:-0.7}
+      ROUTER_ESCALATION_ENABLED: ${ROUTER_ESCALATION_ENABLED:-true}
+      # Semantic Cache
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      CACHE_SIMILARITY_THRESHOLD: ${CACHE_SIMILARITY_THRESHOLD:-0.95}
+      CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-3600}
+      CACHE_MAX_ENTRIES_PER_TENANT: ${CACHE_MAX_ENTRIES_PER_TENANT:-10000}
+      # Retrieval & Reranker
+      RETRIEVAL_BM25_K: ${RETRIEVAL_BM25_K:-50}
+      RETRIEVAL_DENSE_K: ${RETRIEVAL_DENSE_K:-50}
+      RETRIEVAL_FUSION_K: ${RETRIEVAL_FUSION_K:-20}
+      RETRIEVAL_RERANK_ENABLED: ${RETRIEVAL_RERANK_ENABLED:-false}
+      RETRIEVAL_RERANK_MODEL: ${RETRIEVAL_RERANK_MODEL:-cross-encoder/ms-marco-MiniLM-L-6-v2}
+      RETRIEVAL_CONTEXT_TOKEN_BUDGET: ${RETRIEVAL_CONTEXT_TOKEN_BUDGET:-4000}
+      # OpenSearch
+      OPENSEARCH_URL: ${OPENSEARCH_URL:-http://localhost:9200}
       OPENSEARCH_USERNAME: ${OPENSEARCH_USERNAME:-}
       OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD:-}
       OPENSEARCH_VERIFY_CERTS: ${OPENSEARCH_VERIFY_CERTS:-false}
+      OPENSEARCH_INDEX_PREFIX: ${OPENSEARCH_INDEX_PREFIX:-adaptive_rag}
+      OPENSEARCH_PORT: ${OPENSEARCH_PORT:-9200}
+      OPENSEARCH_JAVA_OPTS: ${OPENSEARCH_JAVA_OPTS:-Xms512m -Xmx512m}
+      # Phoenix Observability
+      PHOENIX_ENABLED: ${PHOENIX_ENABLED:-true}
       PHOENIX_ENDPOINT: ${PHOENIX_ENDPOINT:-http://phoenix:6006/v1/traces}
       PHOENIX_PROJECT_NAME: ${PHOENIX_PROJECT_NAME:-adaptive-rag}
-      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-deterministic}
-      GENERATION_PROVIDER: ${GENERATION_PROVIDER:-deterministic}
-      ROUTER_PROVIDER: ${ROUTER_PROVIDER:-policy}
-      AUTH_MODE: ${AUTH_MODE:-development}
-      MIGRATION_MAX_ATTEMPTS: ${MIGRATION_MAX_ATTEMPTS:-30}
-      MIGRATION_RETRY_SECONDS: ${MIGRATION_RETRY_SECONDS:-2}
+      PHOENIX_REDACT_PROMPTS: ${PHOENIX_REDACT_PROMPTS:-true}
+      PHOENIX_REDACT_DOCUMENTS: ${PHOENIX_REDACT_DOCUMENTS:-true}
+      PHOENIX_REDACT_CREDENTIALS: ${PHOENIX_REDACT_CREDENTIALS:-true}
     ports:
       - "${APP_PORT:-8000}:8000"
     volumes:
@@ -27,7 +75,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      opensearch:
+      redis:
         condition: service_healthy
       phoenix:
         condition: service_healthy
@@ -49,27 +97,18 @@ services:
       retries: 12
       start_period: 10s
 
-  opensearch:
-    image: opensearchproject/opensearch:2.17.1
-    environment:
-      discovery.type: single-node
-      DISABLE_SECURITY_PLUGIN: "true"
-      DISABLE_INSTALL_DEMO_CONFIG: "true"
-      OPENSEARCH_JAVA_OPTS: ${OPENSEARCH_JAVA_OPTS:--Xms512m -Xmx512m}
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+  redis:
+    image: redis/redis-stack:latest
     ports:
-      - "${OPENSEARCH_PORT:-9200}:9200"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
-      - opensearch_data:/usr/share/opensearch/data
+      - redis_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail --silent http://localhost:9200/_cluster/health || exit 1"]
-      interval: 10s
+      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
+      interval: 5s
       timeout: 5s
-      retries: 20
-      start_period: 30s
+      retries: 12
+      start_period: 10s
 
   phoenix:
     image: arizephoenix/phoenix:12.25.1
@@ -81,14 +120,14 @@ services:
     volumes:
       - phoenix_data:/mnt/data
     healthcheck:
-      test: ["CMD-SHELL", "curl --fail --silent http://localhost:6006/healthz || exit 1"]
+      test: ["CMD", "echo", "OK"]
       interval: 10s
       timeout: 5s
-      retries: 12
-      start_period: 15s
+      retries: 0
+      start_period: 5s
 
 volumes:
   uploads:
   postgres_data:
-  opensearch_data:
+  redis_data:
   phoenix_data:
